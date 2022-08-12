@@ -5,17 +5,23 @@
 <main>
     <h1>Edit Campaign</h1>
     <p><b>ID:</b> <i>{{ campaign.ID }}</i></p>
-    <form action="/campaigns" method="put">
+    <form action="/campaigns/{{ campaign.ID }}/update" method="post" enctype="multipart/form-data">
         {{ csrfField | safe }}
 
-        <label for="name">Name</label>
-        <input type="text" name="name" id="name">
+        <input type="hidden" name="id" value="{{ campaign.ID }}">
 
-        <label for="template">Template</label>
-        <textarea name="template" id="template" cols="30" rows="10"></textarea>
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name" value="{{campaign.Name}}">
+
+        <label for="subject_template">Subject Template</label>
+        <textarea name="subject_template" id="subject_template" cols="30" rows="1">{{campaign.Template.Subject}}</textarea>
+
+        <label for="body_template">Body Template</label>
+        <textarea name="body_template" id="body_template" cols="30" rows="10">{{campaign.Template.Body}}</textarea>
 
         <label for="csv">CSV</label>
         <input type="file" name="csv" id="csv" accept=".csv">
+
         <input type="submit" value="Save">
     </form>
 </main>

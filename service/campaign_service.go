@@ -10,6 +10,7 @@ import (
 	"github.com/fahmifan/mailmerger-server/localfs"
 	"github.com/fahmifan/ulids"
 	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
 	"go.etcd.io/bbolt"
 )
 
@@ -156,6 +157,56 @@ func (c *CampaignService) Show(ctx context.Context, id ulid.ULID) (campaign Camp
 		return Campaign{}, err
 	}
 	return campaign, nil
+}
+
+type UpdateCampaignRequest struct {
+	ID              ulids.ULID `form:"id"`
+	Name            string     `form:"name"`
+	BodyTemplate    string     `form:"body_template"`
+	SubjectTemplate string     `form:"subject_template"`
+	CSV             io.Reader  `form:"-"`
+}
+
+func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest) (campaign Campaign, err error) {
+	campaign = Campaign{
+		ID:   req.ID,
+		Name: req.Name,
+		Template: Template{
+			Body:    req.BodyTemplate,
+			Subject: req.SubjectTemplate,
+		},
+	}
+
+	if req.CSV != nil {
+		campaign.CSV, err = c.createFile(req.CSV)
+		if err != nil {
+			return Campaign{}, err
+		}
+	}
+
+	log.Info().Msg("masuuuk")
+
+	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket([]byte(CampaignBucket))
+
+		key := []byte(campaign.ID.ULID.String())
+		if old := bucket.Get(key); old == nil {
+			return ErrNotFound
+		}
+
+		err = bucket.Put(key, MarshalJson(campaign))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return Campaign{}, err
+	}
+
+	log.Info().Msg("success")
+	return
 }
 
 func MarshalJson(i interface{}) []byte {

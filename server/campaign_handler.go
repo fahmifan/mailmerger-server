@@ -99,3 +99,32 @@ func (m CampaignHandler) Edit(ec echo.Context) (err error) {
 
 	return ec.Render(http.StatusOK, "pages/campaigns/edit.html", echo.Map{"campaign": campaign})
 }
+
+func (m CampaignHandler) Update(ec echo.Context) (err error) {
+	req := service.UpdateCampaignRequest{}
+	if err := ec.Bind(&req); err != nil {
+		log.Err(err).Msg("create campaign - bind")
+		return ec.Redirect(http.StatusSeeOther, m.echo.Reverse("campaigns-new"))
+	}
+
+	const mb = 1024 * 1024
+	const maxMem = 2 * mb
+	if err := ec.Request().ParseMultipartForm(maxMem); err != nil {
+		return systemError(ec, err)
+	}
+
+	csvFile, _, err := ec.Request().FormFile("csv")
+	if err == nil {
+		req.CSV = csvFile
+		defer csvFile.Close()
+	}
+
+	_, err = m.service.CampaignService.Update(ec.Request().Context(), req)
+	if errors.Is(err, service.ErrNotFound) {
+		return notFound(ec)
+	} else if err != nil {
+		return systemError(ec, err)
+	}
+
+	return ec.Redirect(http.StatusSeeOther, m.echo.Reverse("campaigns-show", req.ID))
+}

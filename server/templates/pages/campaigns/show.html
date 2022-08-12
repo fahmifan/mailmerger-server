@@ -7,6 +7,16 @@
     <p>ID: {{ campaign.ID }}</p>
     <p>Name: {{ campaign.Name }}</p>
 
+    <label for="subject">Subject</label>
+    <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">
+        <pre id="subject">{{ campaign.Template.Subject }}</pre>
+    </div>
+
+    <label for="body">Body</label>
+    <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">
+        <pre id="body">{{ campaign.Template.Body }}</pre>
+    </div>
+
     <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
         <button>
             Edit

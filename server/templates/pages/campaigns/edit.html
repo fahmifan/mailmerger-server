@@ -1,0 +1,24 @@
+{% extends "../../base.html" %}
+
+{%block content%}
+
+<main>
+    <h1>Edit Campaign</h1>
+    <p><b>ID:</b> <i>{{ campaign.ID }}</i></p>
+    <form action="/campaigns" method="put">
+        {{ csrfField | safe }}
+
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name">
+
+        <label for="template">Template</label>
+        <textarea name="template" id="template" cols="30" rows="10"></textarea>
+
+        <label for="csv">CSV</label>
+        <input type="file" name="csv" id="csv" accept=".csv">
+        <input type="submit" value="Save">
+    </form>
+</main>
+
+
+{%endblock%}

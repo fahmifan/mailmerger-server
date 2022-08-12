@@ -1,0 +1,17 @@
+{% extends "../../base.html" %}
+
+{%block content%}
+
+<main>
+    <h1>Campaign</h1>
+    <p>ID: {{ campaign.ID }}</p>
+    <p>Name: {{ campaign.Name }}</p>
+
+    <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
+        <button>
+            Edit
+        </button>
+    </a>
+</main>
+
+{%endblock%}

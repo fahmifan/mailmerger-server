@@ -1,0 +1,21 @@
+{% extends "../../base.html" %}
+
+{%block content%}
+
+<main>
+    <h1>Campaigns</h1>
+    <a href="{{ reverse("campaigns-new") }}">
+        <button>New</button>
+    </a>
+    {% for campaign in campaigns %}
+    <ul>
+        <li>
+            <a href="{{ reverse("campaigns-show", campaign.ID) }}">
+                {{ campaign.Name }}
+            </a>
+        </li>
+    </ul>
+    {% endfor %}
+</main>
+
+{%endblock%}

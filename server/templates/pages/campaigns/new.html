@@ -1,0 +1,26 @@
+{% extends "../../base.html" %}
+
+{%block content%}
+
+<main>
+    <h1>New Campaign</h1>
+    <form action="/campaigns" method="post" enctype="multipart/form-data">
+        {{ csrfField | safe }}
+
+        <label for="name">Name</label>
+        <input type="text" name="name" id="name">
+
+        <label for="subject_template">Subject Template</label>
+        <textarea name="subject_template" id="subject_template" cols="30" rows="1"></textarea>
+
+        <label for="body_template">Body Template</label>
+        <textarea name="body_template" id="body_template" cols="30" rows="10"></textarea>
+
+        <label for="csv">CSV</label>
+        <input type="file" name="csv" id="csv" accept=".csv">
+
+        <input type="submit" value="Save">
+    </form>
+</main>
+
+{%endblock%}

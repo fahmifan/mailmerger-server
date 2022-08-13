@@ -17,11 +17,41 @@
         <pre id="body">{{ campaign.Template.Body }}</pre>
     </div>
 
+    <p>File: <i>{{ campaign.CSV.FileName }}</i></p>
+
     <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
         <button>
             Edit
         </button>
     </a>
+
+    <h2>Events</h2>
+    <form action="{{ reverse("events-create") }}" method="post">
+        {{ csrfField | safe }}
+        
+        <input type="hidden" name="campaign_id" value="{{ campaign.ID }}">
+        <input type="submit" value="Sent Blast Emails">
+    </form>
+    {% if campaign.IsNoEvent() %}
+        <p><i>No event</i></p>
+    {% else %}
+    <div style="max-height: 200px; overflow: scroll;">
+        <table>
+            <thead>
+                <th>Date</th>
+                <th>Status</th>
+            </thead>
+            <tbody style="flex-direction: row-reverse">
+            {% for event in campaign.Events %}
+                <tr>
+                    <td>{{event.CreatedAt | date:"2006-02-01 15:04"}}</td>
+                    <td>{{event.Status}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 </main>
 
 {%endblock%}

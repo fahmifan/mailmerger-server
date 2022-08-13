@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fahmifan/mailmerger-server/service"
+	"github.com/fahmifan/ulids"
 	"github.com/labstack/echo/v4"
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
@@ -74,7 +75,7 @@ func (m CampaignHandler) Show(ec echo.Context) (err error) {
 		return notFound(ec)
 	}
 
-	campaign, err := m.service.CampaignService.Show(ec.Request().Context(), id)
+	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), ulids.ULID{id})
 	if errors.Is(err, service.ErrNotFound) {
 		return notFound(ec)
 	} else if err != nil {
@@ -90,7 +91,7 @@ func (m CampaignHandler) Edit(ec echo.Context) (err error) {
 		return notFound(ec)
 	}
 
-	campaign, err := m.service.CampaignService.Show(ec.Request().Context(), id)
+	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), ulids.ULID{id})
 	if errors.Is(err, service.ErrNotFound) {
 		return notFound(ec)
 	} else if err != nil {
@@ -113,8 +114,8 @@ func (m CampaignHandler) Update(ec echo.Context) (err error) {
 		return systemError(ec, err)
 	}
 
-	csvFile, _, err := ec.Request().FormFile("csv")
-	if err == nil {
+	csvFile, header, err := ec.Request().FormFile("csv")
+	if err == nil && header.Size > 0 {
 		req.CSV = csvFile
 		defer csvFile.Close()
 	}

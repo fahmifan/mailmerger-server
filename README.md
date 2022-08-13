@@ -12,6 +12,7 @@ make run-server
 erDiagram
 	Campaign ||--o| Csv: have
 	Campaign ||--o| Template: have
+	Campaign ||--o{ Event: have
 
 	Campaign {
 		string id
@@ -19,15 +20,17 @@ erDiagram
 		string template_id
 	}
 	Csv {
-		string id
 		name string
 		path string
 	}
 	Template {
-		id string
 		name string
 		body string
 		subject string
+	}
+	Event {
+		created_at string
+		status string
 	}
 
 ```

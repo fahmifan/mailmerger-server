@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fahmifan/mailmerger-server/localfs"
+	"github.com/fahmifan/mailmerger-server/pkg/localfs"
+	"github.com/fahmifan/mailmerger-server/pkg/smtp"
 	"github.com/fahmifan/mailmerger-server/server"
 	"github.com/fahmifan/mailmerger-server/service"
 	"github.com/spf13/cobra"
@@ -37,7 +38,19 @@ func runServer() *cobra.Command {
 		localFS := localfs.Storage{
 			RootDir: "private",
 		}
-		svc := service.NewService(db, &localFS)
+		smptTransporter, err := smtp.NewSmtpClient(&smtp.Config{
+			Host: "0.0.0.0",
+			Port: 1025,
+		})
+		if err != nil {
+			return
+		}
+		blastEmailCfg := service.BlastEmailConfig{
+			Sender:      "admin@mailmerger.com",
+			Concurrency: 4,
+			Transporter: smptTransporter,
+		}
+		svc := service.NewService(db, &localFS, &blastEmailCfg)
 		srv := server.NewServer(svc)
 
 		srv.Run()

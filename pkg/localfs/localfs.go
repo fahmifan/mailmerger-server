@@ -36,5 +36,6 @@ func (s *Storage) Save(dst string, reader io.Reader) error {
 }
 
 func (s *Storage) Seek(dst string) (io.ReadCloser, error) {
+	dst = path.Join(s.RootDir, dst)
 	return os.Open(dst)
 }

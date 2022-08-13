@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/fahmifan/mailmerger"
-	"github.com/fahmifan/mailmerger-server/pkg/localfs"
 	"github.com/fahmifan/ulids"
 	"github.com/rs/zerolog/log"
 	"go.etcd.io/bbolt"
@@ -60,34 +59,6 @@ type BlastEmailConfig struct {
 	Transporter mailmerger.Transporter
 }
 
-type Config struct {
-	db            *bbolt.DB
-	localStorage  *localfs.Storage
-	blastEmailCfg *BlastEmailConfig
-}
-
-type Service struct {
-	CampaignService *CampaignService
-}
-
-func NewService(db *bbolt.DB, localStorage *localfs.Storage, blastEmailCfg *BlastEmailConfig) *Service {
-	cfg := Config{
-		db:            db,
-		localStorage:  localStorage,
-		blastEmailCfg: blastEmailCfg,
-	}
-	db.Update(func(tx *bbolt.Tx) (err error) {
-		_, err = tx.CreateBucketIfNotExists([]byte(CampaignBucket))
-		if err != nil {
-			return
-		}
-		return err
-	})
-	return &Service{
-		CampaignService: &CampaignService{&cfg},
-	}
-}
-
 type CampaignService struct {
 	cfg *Config
 }
@@ -112,7 +83,7 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 	}
 
 	if req.CSV != nil {
-		campaign.CSV, err = c.createFile(req.CSV)
+		campaign.CSV, err = c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
@@ -133,14 +104,15 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 	return
 }
 
-func (c *CampaignService) createFile(csvFile io.Reader) (_ CSV, err error) {
+const csvFolder = "csvs"
+
+func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ CSV, err error) {
 	id := ulids.New()
 
-	const folder = "csvs"
 	fileName := id.String() + ".csv"
-	filePath := path.Join(folder, fileName)
+	filePath := path.Join(csvFolder, fileName)
 
-	err = c.cfg.localStorage.Save(filePath, csvFile)
+	err = c.cfg.localStorage.Save(ctx, filePath, csvFile)
 	if err != nil {
 		return CSV{}, err
 	}
@@ -208,7 +180,7 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 	}
 
 	if req.CSV != nil {
-		oldCampaign.CSV, err = c.createFile(req.CSV)
+		oldCampaign.CSV, err = c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
@@ -247,7 +219,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		return
 	}
 
-	csvFile, err := c.cfg.localStorage.Seek(campaign.CSV.Path)
+	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.CSV.Path)
 	if err != nil {
 		return
 	}

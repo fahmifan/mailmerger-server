@@ -1,6 +1,7 @@
 package localfs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -14,7 +15,7 @@ type Storage struct {
 }
 
 // Save save file to local filesystem
-func (s *Storage) Save(dst string, reader io.Reader) error {
+func (s *Storage) Save(_ context.Context, dst string, reader io.Reader) error {
 	dst = path.Join(s.RootDir, dst)
 	dir, _ := path.Split(dst)
 	err := os.MkdirAll(dir, os.ModePerm)
@@ -35,7 +36,7 @@ func (s *Storage) Save(dst string, reader io.Reader) error {
 	return nil
 }
 
-func (s *Storage) Seek(dst string) (io.ReadCloser, error) {
+func (s *Storage) Seek(_ context.Context, dst string) (io.ReadCloser, error) {
 	dst = path.Join(s.RootDir, dst)
 	return os.Open(dst)
 }

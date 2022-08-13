@@ -20,7 +20,7 @@ func systemError(ec echo.Context, err error) error {
 }
 
 func notFound(ec echo.Context) error {
-	return ec.Render(http.StatusOK, "pages/not_found_error.html", echo.Map{})
+	return ec.Render(http.StatusNotFound, "pages/not_found_error.html", echo.Map{})
 }
 
 func (m CampaignHandler) List(ec echo.Context) (err error) {

@@ -39,6 +39,7 @@ func (s *Server) routes() {
 	home := HomeHandler{}
 	campaign := CampaignHandler{s}
 	event := EventHandler{s}
+	files := FileHandler{s}
 
 	s.echo.Use(echo.WrapMiddleware(csrfMiddleware))
 
@@ -52,4 +53,6 @@ func (s *Server) routes() {
 	s.echo.POST("/campaigns/:id/update", campaign.Update).Name = "campaigns-update"
 
 	s.echo.POST("/events", event.Create).Name = "events-create"
+
+	s.echo.GET("/files/:file_name", files.Show).Name = "files-show"
 }

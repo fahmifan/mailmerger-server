@@ -7,7 +7,6 @@ import (
 	"github.com/fahmifan/mailmerger-server/service"
 	"github.com/fahmifan/ulids"
 	"github.com/labstack/echo/v4"
-	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -70,12 +69,12 @@ func (m CampaignHandler) Create(ec echo.Context) (err error) {
 }
 
 func (m CampaignHandler) Show(ec echo.Context) (err error) {
-	id, err := ulid.Parse(ec.Param("id"))
+	id, err := ulids.Parse(ec.Param("id"))
 	if err != nil {
 		return notFound(ec)
 	}
 
-	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), ulids.ULID{id})
+	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), id)
 	if errors.Is(err, service.ErrNotFound) {
 		return notFound(ec)
 	} else if err != nil {
@@ -86,12 +85,12 @@ func (m CampaignHandler) Show(ec echo.Context) (err error) {
 }
 
 func (m CampaignHandler) Edit(ec echo.Context) (err error) {
-	id, err := ulid.Parse(ec.Param("id"))
+	id, err := ulids.Parse(ec.Param("id"))
 	if err != nil {
 		return notFound(ec)
 	}
 
-	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), ulids.ULID{id})
+	campaign, err := m.service.CampaignService.Find(ec.Request().Context(), id)
 	if errors.Is(err, service.ErrNotFound) {
 		return notFound(ec)
 	} else if err != nil {

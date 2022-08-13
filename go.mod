@@ -6,7 +6,7 @@ replace github.com/fahmifan/mailmerger => /home/fahmifan/personal/fahmifan/mailm
 
 require (
 	github.com/fahmifan/mailmerger v0.0.0-20220812084507-041e6bd236c8
-	github.com/fahmifan/ulids v1.0.1
+	github.com/fahmifan/ulids v1.1.0
 	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3
 	github.com/gorilla/csrf v1.7.1
 	github.com/labstack/echo/v4 v4.8.0

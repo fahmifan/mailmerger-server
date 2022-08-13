@@ -19,12 +19,13 @@ type Config struct {
 }
 
 type SMTP struct {
-	mail *gomail.Dialer
-	cfg  *Config
+	mail     *gomail.Dialer
+	cfg      *Config
+	template *pongo2.Template
 }
 
-func NewSmtpClient(cfg *Config) (*SMTP, error) {
-	mm := &SMTP{
+func NewSmtpClient(cfg *Config) (smtp *SMTP, err error) {
+	smtp = &SMTP{
 		cfg: cfg,
 		mail: gomail.NewDialer(
 			cfg.Host,
@@ -34,12 +35,18 @@ func NewSmtpClient(cfg *Config) (*SMTP, error) {
 		),
 	}
 
-	closer, err := mm.mail.Dial()
+	smtp.template, err = pongo2.FromString(template)
+	if err != nil {
+		return
+	}
+
+	closer, err := smtp.mail.Dial()
 	if err != nil {
 		return nil, err
 	}
 	closer.Close()
-	return mm, nil
+
+	return smtp, nil
 }
 
 //go:embed template.html
@@ -51,12 +58,7 @@ func (m *SMTP) Send(ctx context.Context, subject, from, to string, body []byte) 
 	msg.SetHeader("To", to)
 	msg.SetHeader("Subject", subject)
 
-	tpl, err := pongo2.FromString(template)
-	if err != nil {
-		return
-	}
-
-	newBody, err := tpl.Execute(pongo2.Context{"body": string(body)})
+	newBody, err := m.template.Execute(pongo2.Context{"body": string(body)})
 	if err != nil {
 		return
 	}

@@ -51,6 +51,7 @@ const (
 type Event struct {
 	CreatedAt time.Time
 	Status    EventStatus
+	Detail    string
 }
 
 type BlastEmailConfig struct {
@@ -271,7 +272,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	if err = mailer.SendAll(ctx); err != nil {
 		log.Err(err).Msg("sendAll")
 		event.Status = EventStatusFailed
-		return
+		event.Detail = err.Error()
 	}
 
 	campaign.Events = append(campaign.Events, event)

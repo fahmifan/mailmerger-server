@@ -3,6 +3,7 @@ package smtp
 import (
 	"context"
 	_ "embed"
+	"errors"
 
 	"github.com/fahmifan/mailmerger"
 	"github.com/flosch/pongo2"
@@ -55,6 +56,8 @@ func (m *SMTP) Send(ctx context.Context, subject, from, to string, body []byte) 
 	if err != nil {
 		return
 	}
+
+	return errors.New("duh error")
 
 	newBody, err := tpl.Execute(pongo2.Context{"body": string(body)})
 	if err != nil {

@@ -38,14 +38,22 @@
     <div style="max-height: 200px; overflow: scroll;">
         <table>
             <thead>
-                <th>Date</th>
                 <th>Status</th>
+                <th>Detail</th>
+                <th>Date</th>
             </thead>
             <tbody style="flex-direction: row-reverse">
             {% for event in campaign.Events %}
                 <tr>
-                    <td>{{event.CreatedAt | date:"2006-02-01 15:04"}}</td>
                     <td>{{event.Status}}</td>
+                    <td>
+                        {% if event.Detail == "" %}
+                        -
+                        {% else %}
+                        {{event.Detail}}
+                        {% endif %}
+                    </td>
+                    <td>{{event.CreatedAt | date:"2006-02-01 15:04"}}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -36,10 +36,14 @@ func (s *Server) routes() {
 	csrfOpts := []csrf.Option{csrf.SameSite(csrf.SameSiteLaxMode), setSecureCSRF}
 	csrfMiddleware := csrf.Protect([]byte(s.csrfSecret), csrfOpts...)
 
+	home := HomeHandler{}
 	campaign := CampaignHandler{s}
 	event := EventHandler{s}
 
 	s.echo.Use(echo.WrapMiddleware(csrfMiddleware))
+
+	s.echo.GET("/", home.Index).Name = "homes"
+
 	s.echo.GET("/campaigns", campaign.List).Name = "campaigns"
 	s.echo.GET("/campaigns/new", campaign.New).Name = "campaigns-new"
 	s.echo.POST("/campaigns", campaign.Create).Name = "campaigns-create"

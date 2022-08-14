@@ -12,7 +12,6 @@ import (
 	"github.com/fahmifan/mailmerger"
 	"github.com/fahmifan/ulids"
 	"github.com/rs/zerolog/log"
-	"go.etcd.io/bbolt"
 	"gorm.io/gorm"
 )
 
@@ -247,10 +246,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	campaign.Events = append(campaign.Events, event)
-	err = c.cfg.boltDB.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		return bucket.Put([]byte(campaign.ID.String()), MarshalJson(campaign))
-	})
+	err = c.cfg.db.Updates(&campaign).Error
 	if err != nil {
 		return Event{}, err
 	}

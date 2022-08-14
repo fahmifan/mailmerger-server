@@ -33,6 +33,7 @@ CREATE TABLE
 CREATE TABLE IF NOT EXISTS events (
     id text primary key,
     campaign_id text not null references campaigns(id),
+    detail text not null default '',
     "status" varchar(100) not null,
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),

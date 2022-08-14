@@ -26,7 +26,7 @@ type Audit struct {
 
 type Campaign struct {
 	ID     ulids.ULID
-	FileID ulids.ULID
+	FileID *ulids.ULID
 	Name   string
 	Audit
 
@@ -105,7 +105,7 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 		if err = tx.Create(&file).Error; err != nil {
 			return Campaign{}, err
 		}
-		newCampaign.FileID = file.ID
+		newCampaign.FileID = &file.ID
 	}
 
 	template := Template{
@@ -182,44 +182,29 @@ type UpdateCampaignRequest struct {
 }
 
 func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest) (_ Campaign, err error) {
-	oldCampaign, err := c.Find(ctx, req.ID)
+	campaign, err := c.Find(ctx, req.ID)
 	if err != nil {
 		return
 	}
 
-	oldCampaign.Name = req.Name
-	oldCampaign.Template = Template{
+	campaign.Name = req.Name
+	campaign.Template = Template{
 		Body:    req.BodyTemplate,
 		Subject: req.SubjectTemplate,
 	}
 
 	if req.CSV != nil {
-		oldCampaign.File, err = c.createFile(ctx, req.CSV)
+		campaign.File, err = c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
 	}
 
-	err = c.cfg.boltDB.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-
-		key := []byte(oldCampaign.ID.ULID.String())
-		if old := bucket.Get(key); old == nil {
-			return ErrNotFound
-		}
-
-		err = bucket.Put(key, MarshalJson(oldCampaign))
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
+	err = c.cfg.db.Updates(&campaign).Error
 	if err != nil {
 		return Campaign{}, err
 	}
-
-	return
+	return campaign, nil
 }
 
 type CreateBlastEmailEventRequest struct {

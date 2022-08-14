@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"path"
@@ -13,6 +12,7 @@ import (
 	"github.com/fahmifan/ulids"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
+	"gorm.io/gorm/utils"
 )
 
 var ErrNotFound = errors.New("not found error")
@@ -32,6 +32,26 @@ type Campaign struct {
 	File     File
 	Template Template
 	Events   []Event
+}
+
+func (c *Campaign) BeforeCreate(tx *gorm.DB) error {
+	omitFields := []string{"File", "Template", "Campaign"}
+	gormOmit(tx, omitFields...)
+	return nil
+}
+
+func (c *Campaign) BeforeUpdate(tx *gorm.DB) error {
+	omitFields := []string{"File", "Template", "Campaign"}
+	gormOmit(tx, omitFields...)
+	return nil
+}
+
+func gormOmit(tx *gorm.DB, columns ...string) {
+	if len(columns) == 1 && strings.ContainsRune(columns[0], ',') {
+		tx.Statement.Omits = strings.FieldsFunc(columns[0], utils.IsValidDBNameChar)
+	} else {
+		tx.Statement.Omits = columns
+	}
 }
 
 func (c Campaign) IsNoEvent() bool {
@@ -87,49 +107,45 @@ type CreateCampaignRequest struct {
 	CSV             io.Reader `form:"-"`
 }
 
-func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest) (campaign Campaign, err error) {
+func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest) (_ Campaign, err error) {
 	tx := c.cfg.db.WithContext(ctx)
 
-	newCampaign := Campaign{
+	campaign := Campaign{
 		ID:   ulids.New(),
 		Name: req.Name,
 	}
 
 	if req.CSV != nil {
-		file, err := c.createFile(ctx, req.CSV)
+		file, err := c.createFileIfAny(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
-
-		if err = tx.Create(&file).Error; err != nil {
-			return Campaign{}, err
-		}
-		newCampaign.FileID = &file.ID
+		campaign.FileID = &file.ID
 	}
 
 	template := Template{
-		ID:      ulids.New(),
-		Body:    req.BodyTemplate,
-		Subject: req.SubjectTemplate,
+		ID:         ulids.New(),
+		Body:       req.BodyTemplate,
+		CampaignID: campaign.ID,
+		Subject:    req.SubjectTemplate,
 	}
-	newCampaign.Template = template
+	campaign.Template = template
 
-	if err = tx.Create(&newCampaign).Omit("Events", "Template", "File").Error; err != nil {
+	if err = tx.Create(&campaign).Error; err != nil {
 		return
 	}
 
-	template.CampaignID = newCampaign.ID
+	template.CampaignID = campaign.ID
 	if err = tx.Create(&template).Error; err != nil {
 		return
 	}
 
-	campaign = newCampaign
 	return
 }
 
 const csvFolder = "csvs"
 
-func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ File, err error) {
+func (c *CampaignService) createFileIfAny(ctx context.Context, csvFile io.Reader) (_ File, err error) {
 	id := ulids.New()
 
 	fileName := id.String() + ".csv"
@@ -140,11 +156,17 @@ func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ 
 		return File{}, err
 	}
 
-	return File{
+	file := File{
 		ID:       id,
 		Folder:   filePath,
 		FileName: fileName,
-	}, nil
+	}
+
+	if err = c.cfg.db.Create(&file).Error; err != nil {
+		return File{}, err
+	}
+
+	return file, nil
 }
 
 func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err error) {
@@ -188,20 +210,15 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 
 	campaign.Name = req.Name
 
-	tx := c.cfg.db.WithContext(ctx)
-
 	if req.CSV != nil {
-		campaign.File, err = c.createFile(ctx, req.CSV)
+		campaign.File, err = c.createFileIfAny(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
-
-		if err = tx.Create(&campaign.File).Error; err != nil {
-			return Campaign{}, err
-		}
+		campaign.FileID = &campaign.File.ID
 	}
 
-	if err = c.cfg.db.Updates(&campaign).Omit("Events", "Template", "File").Error; err != nil {
+	if err = c.cfg.db.Updates(&campaign).Error; err != nil {
 		return Campaign{}, err
 	}
 
@@ -279,9 +296,4 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	return event, nil
-}
-
-func MarshalJson(i interface{}) []byte {
-	bt, _ := json.Marshal(i)
-	return bt
 }

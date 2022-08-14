@@ -10,6 +10,8 @@ import (
 	"github.com/fahmifan/mailmerger-server/service"
 	"github.com/spf13/cobra"
 	"go.etcd.io/bbolt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -31,7 +33,13 @@ func runServer() *cobra.Command {
 	}
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
-		db, err := bbolt.Open("./mailmerger.bbolt.db", 0666, nil)
+		dsn := "host=localhost user=root password=root dbname=mailmerger port=5432 sslmode=disable"
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err != nil {
+			panic("failed to connect database")
+		}
+
+		boltDB, err := bbolt.Open("./mailmerger.bbolt.db", 0666, nil)
 		if err != nil {
 			return
 		}
@@ -50,7 +58,7 @@ func runServer() *cobra.Command {
 			Concurrency: 4,
 			Transporter: smptTransporter,
 		}
-		svc := service.NewService(db, &localFS, &blastEmailCfg)
+		svc := service.NewService(db, boltDB, &localFS, &blastEmailCfg)
 		srv := server.NewServer(svc)
 
 		srv.Run()

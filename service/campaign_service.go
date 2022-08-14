@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"path"
@@ -12,32 +11,66 @@ import (
 	"github.com/fahmifan/mailmerger"
 	"github.com/fahmifan/ulids"
 	"github.com/rs/zerolog/log"
-	"go.etcd.io/bbolt"
+	"gorm.io/gorm"
+	"gorm.io/gorm/utils"
 )
 
 var ErrNotFound = errors.New("not found error")
 
+type Audit struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
 type Campaign struct {
-	ID       ulids.ULID
-	Name     string
-	CSV      CSV
+	ID     ulids.ULID `gorm:"primary_key"`
+	FileID *ulids.ULID
+	Name   string
+	Audit
+
+	File     File
 	Template Template
 	Events   []Event
+}
+
+func (c *Campaign) BeforeCreate(tx *gorm.DB) error {
+	omitFields := []string{"Events"}
+	gormOmit(tx, omitFields...)
+	return nil
+}
+
+func (c *Campaign) BeforeUpdate(tx *gorm.DB) error {
+	omitFields := []string{"Events"}
+	gormOmit(tx, omitFields...)
+	return nil
+}
+
+func gormOmit(tx *gorm.DB, columns ...string) {
+	if len(columns) == 1 && strings.ContainsRune(columns[0], ',') {
+		tx.Statement.Omits = strings.FieldsFunc(columns[0], utils.IsValidDBNameChar)
+	} else {
+		tx.Statement.Omits = columns
+	}
 }
 
 func (c Campaign) IsNoEvent() bool {
 	return len(c.Events) == 0
 }
 
-type CSV struct {
-	ID       ulids.ULID
-	Path     string
+type File struct {
+	ID       ulids.ULID `gorm:"primary_key"`
+	Folder   string
 	FileName string
+	Audit
 }
 
 type Template struct {
-	Body    string
-	Subject string
+	ID         ulids.ULID `gorm:"primary_key"`
+	CampaignID ulids.ULID
+	Body       string
+	Subject    string
+	Audit
 }
 
 type EventStatus string
@@ -48,9 +81,11 @@ const (
 )
 
 type Event struct {
-	CreatedAt time.Time
-	Status    EventStatus
-	Detail    string
+	ID         ulids.ULID
+	CampaignID ulids.ULID `gorm:"references:CampaignID"`
+	Detail     string
+	CreatedAt  time.Time
+	Status     EventStatus
 }
 
 type BlastEmailConfig struct {
@@ -72,41 +107,40 @@ type CreateCampaignRequest struct {
 	CSV             io.Reader `form:"-"`
 }
 
-func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest) (campaign Campaign, err error) {
-	campaign = Campaign{
+func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest) (_ Campaign, err error) {
+	tx := c.cfg.db.WithContext(ctx)
+
+	campaign := Campaign{
 		ID:   ulids.New(),
 		Name: req.Name,
-		Template: Template{
-			Body:    req.BodyTemplate,
-			Subject: req.SubjectTemplate,
-		},
 	}
 
 	if req.CSV != nil {
-		campaign.CSV, err = c.createFile(ctx, req.CSV)
+		file, err := c.createFileIfAny(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
+		campaign.FileID = &file.ID
 	}
 
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		err = bucket.Put([]byte(campaign.ID.ULID.String()), MarshalJson(campaign))
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		return Campaign{}, err
+	template := Template{
+		ID:         ulids.New(),
+		Body:       req.BodyTemplate,
+		CampaignID: campaign.ID,
+		Subject:    req.SubjectTemplate,
 	}
+	campaign.Template = template
+
+	if err = tx.Create(&campaign).Error; err != nil {
+		return
+	}
+
 	return
 }
 
 const csvFolder = "csvs"
 
-func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ CSV, err error) {
+func (c *CampaignService) createFileIfAny(ctx context.Context, csvFile io.Reader) (_ File, err error) {
 	id := ulids.New()
 
 	fileName := id.String() + ".csv"
@@ -114,47 +148,43 @@ func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ 
 
 	err = c.cfg.localStorage.Save(ctx, filePath, csvFile)
 	if err != nil {
-		return CSV{}, err
+		return File{}, err
 	}
 
-	return CSV{
+	file := File{
 		ID:       id,
-		Path:     filePath,
+		Folder:   filePath,
 		FileName: fileName,
-	}, nil
+	}
+
+	if err = c.cfg.db.Create(&file).Error; err != nil {
+		return File{}, err
+	}
+
+	return file, nil
 }
 
 func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err error) {
-	err = c.cfg.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		return bucket.ForEach(func(k, v []byte) error {
-			campaign := Campaign{}
-			err := json.Unmarshal(v, &campaign)
-			if err != nil {
-				return err
-			}
-			campaigns = append(campaigns, campaign)
-			return nil
-		})
-	})
-	return campaigns, err
+	if err = c.cfg.db.Model(&Campaign{}).
+		Preload("Events").
+		Preload("Template").
+		Preload("File").
+		Find(&campaigns).
+		Error; err != nil {
+		return
+	}
+
+	return
 }
 
 func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Campaign, err error) {
-	err = c.cfg.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		v := bucket.Get([]byte(id.String()))
-		err := json.Unmarshal(v, &campaign)
-		if err != nil {
-			return err
-		}
-		if v == nil {
-			return ErrNotFound
-		}
-		return json.Unmarshal(v, &campaign)
-	})
-	if err != nil {
-		return Campaign{}, err
+	if err = c.cfg.db.
+		Preload("File").
+		Preload("Template").
+		Preload("Events").
+		Take(&campaign, "id = ?", id).
+		Error; err != nil {
+		return
 	}
 	return campaign, nil
 }
@@ -168,44 +198,51 @@ type UpdateCampaignRequest struct {
 }
 
 func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest) (_ Campaign, err error) {
-	oldCampaign, err := c.Find(ctx, req.ID)
+	campaign, err := c.Find(ctx, req.ID)
 	if err != nil {
 		return
 	}
 
-	oldCampaign.Name = req.Name
-	oldCampaign.Template = Template{
-		Body:    req.BodyTemplate,
-		Subject: req.SubjectTemplate,
-	}
+	campaign.Name = req.Name
 
 	if req.CSV != nil {
-		oldCampaign.CSV, err = c.createFile(ctx, req.CSV)
+		campaign.File, err = c.createFileIfAny(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
+		campaign.FileID = &campaign.File.ID
 	}
 
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-
-		key := []byte(oldCampaign.ID.ULID.String())
-		if old := bucket.Get(key); old == nil {
-			return ErrNotFound
-		}
-
-		err = bucket.Put(key, MarshalJson(oldCampaign))
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
+	if err = c.cfg.db.Updates(&campaign).Error; err != nil {
 		return Campaign{}, err
 	}
 
-	return
+	tpl := Template{
+		ID:         ulids.New(),
+		CampaignID: campaign.ID,
+		Body:       req.BodyTemplate,
+		Subject:    req.SubjectTemplate,
+	}
+	if err = c.replaceTemplate(ctx, &campaign, &tpl); err != nil {
+		return
+	}
+
+	return campaign, nil
+}
+
+func (c *CampaignService) replaceTemplate(ctx context.Context, campaign *Campaign, tpl *Template) (err error) {
+	return c.cfg.db.Transaction(func(tx *gorm.DB) (err error) {
+		if err = tx.Delete(&campaign.Template).Error; err != nil {
+			return
+		}
+
+		if err = tx.Create(tpl).Error; err != nil {
+			return
+		}
+
+		campaign.Template = *tpl
+		return
+	})
 }
 
 type CreateBlastEmailEventRequest struct {
@@ -219,7 +256,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		return
 	}
 
-	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.CSV.Path)
+	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.File.Folder)
 	if err != nil {
 		return
 	}
@@ -238,8 +275,9 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	event = Event{
-		CreatedAt: time.Now(),
-		Status:    EventStatusSuccess,
+		ID:         ulids.New(),
+		CampaignID: campaign.ID,
+		Status:     EventStatusSuccess,
 	}
 	if err = mailer.SendAll(ctx); err != nil {
 		log.Err(err).Msg("sendAll")
@@ -247,19 +285,10 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		event.Detail = err.Error()
 	}
 
-	campaign.Events = append(campaign.Events, event)
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		return bucket.Put([]byte(campaign.ID.String()), MarshalJson(campaign))
-	})
+	err = c.cfg.db.Create(&event).Error
 	if err != nil {
 		return Event{}, err
 	}
 
 	return event, nil
-}
-
-func MarshalJson(i interface{}) []byte {
-	bt, _ := json.Marshal(i)
-	return bt
 }

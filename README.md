@@ -2,35 +2,53 @@
 
 A server for Mailmerger
 
-Run server:
-```
+## Development
+Tools to install:
+- [rubenv/sql-migrate: SQL schema migration tool for Go.](https://github.com/rubenv/sql-migrate)
+- [cortesi/modd: A flexible developer tool that runs processes and responds to filesystem changes](https://github.com/cortesi/modd)
+- [Install Docker Engine | Docker Documentation](https://docs.docker.com/engine/install/)
+
+### Start development server
+Copy the `example.dbconfig.yml` adjust to your local setup. 
+
+```bash
+# run postgres & create the db
+make run-dev-postgres
+# run schema migration
+make migrate-up
+
+# run mailhog the email server
+make run-dev-mailhog
+# run server using modd
 make run-server
 ```
 
 # ERD
 ```mermaid
 erDiagram
-	Campaign ||--o| Csv: have
+	Campaign ||--o| File: have
 	Campaign ||--o| Template: have
 	Campaign ||--o{ Event: have
 
 	Campaign {
-		string id
-		string csv_id
-		string template_id
+		id string
+		file_id string
+		template_id string
 	}
-	Csv {
+	File {
+		id string
 		name string
 		path string
 	}
 	Template {
-		name string
 		body string
 		subject string
 	}
 	Event {
-		created_at string
+		id string
+		created_at timestamp
 		status string
+		detail string
 	}
 
 ```

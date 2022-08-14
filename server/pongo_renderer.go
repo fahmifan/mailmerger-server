@@ -1,7 +1,9 @@
 package server
 
 import (
+	"encoding/json"
 	"io"
+	"os"
 	"path"
 
 	"github.com/flosch/pongo2"
@@ -15,6 +17,7 @@ var _ echo.Renderer = (*PongoRenderer)(nil)
 // PongoRenderer implements echo.Renderer
 type PongoRenderer struct {
 	*PongoRendererConfig
+	globalData map[string]interface{}
 }
 type PongoRendererConfig struct {
 	BaseURL      string
@@ -24,7 +27,28 @@ type PongoRendererConfig struct {
 
 // NewPongoRenderer ..
 func NewPongoRenderer(cfg *PongoRendererConfig) *PongoRenderer {
-	return &PongoRenderer{cfg}
+	pr := &PongoRenderer{PongoRendererConfig: cfg}
+	pr.loadGlobalData()
+	return pr
+}
+
+func (r *PongoRenderer) loadGlobalData() {
+	if r.globalData == nil {
+		r.globalData = make(map[string]interface{})
+	}
+
+	nav := make(map[string]interface{})
+	navPath := path.Join(r.RootDir, "data/navigation.json")
+	bt, err := os.ReadFile(navPath)
+	if err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(bt, &nav); err != nil {
+		return
+	}
+
+	r.globalData["navigation"] = nav
 }
 
 // Render implement echo.Renderer
@@ -53,6 +77,10 @@ func (r *PongoRenderer) Render(w io.Writer, name string, data interface{}, ec ec
 	ctx["baseURL"] = r.BaseURL
 	ctx["debugEnabled"] = r.DebugEnabled
 	ctx["reverse"] = ec.Echo().Reverse
+
+	for k, v := range r.globalData {
+		ctx[k] = v
+	}
 
 	if err = tpl.ExecuteWriter(ctx, w); err != nil {
 		log.Err(err).Msg("exec writer")

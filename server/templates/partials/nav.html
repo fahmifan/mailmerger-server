@@ -1,0 +1,9 @@
+{% if navigation.items %}
+<nav>
+    <ol class="navs">
+    {% for item in navigation.items %}
+        <li class="nav"><a href="{{item.url}}">{{item.text}}</a></li>
+    {% endfor %}
+    </ol>
+</nav>
+{% endif %}

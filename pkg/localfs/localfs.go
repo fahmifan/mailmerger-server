@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 )
 
 // Storage ..
@@ -37,6 +38,23 @@ func (s *Storage) Save(_ context.Context, dst string, reader io.Reader) error {
 }
 
 func (s *Storage) Seek(_ context.Context, dst string) (io.ReadCloser, error) {
+	// replace path walking
+	dst = strings.ReplaceAll(dst, "/../", "/")
+	dst = strings.ReplaceAll(dst, "/..", "/")
+
 	dst = path.Join(s.RootDir, dst)
-	return os.Open(dst)
+	file, err := os.Open(dst)
+	if err != nil {
+		return nil, err
+	}
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	if stat.IsDir() {
+		return nil, os.ErrNotExist
+	}
+
+	return file, nil
 }

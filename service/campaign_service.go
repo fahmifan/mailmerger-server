@@ -35,13 +35,13 @@ type Campaign struct {
 }
 
 func (c *Campaign) BeforeCreate(tx *gorm.DB) error {
-	omitFields := []string{"File", "Template", "Campaign"}
+	omitFields := []string{"Events"}
 	gormOmit(tx, omitFields...)
 	return nil
 }
 
 func (c *Campaign) BeforeUpdate(tx *gorm.DB) error {
-	omitFields := []string{"File", "Template", "Campaign"}
+	omitFields := []string{"Events"}
 	gormOmit(tx, omitFields...)
 	return nil
 }
@@ -132,11 +132,6 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 	campaign.Template = template
 
 	if err = tx.Create(&campaign).Error; err != nil {
-		return
-	}
-
-	template.CampaignID = campaign.ID
-	if err = tx.Create(&template).Error; err != nil {
 		return
 	}
 

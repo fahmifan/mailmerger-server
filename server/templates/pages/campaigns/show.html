@@ -17,7 +17,7 @@
         <pre id="body">{{ campaign.Template.Body }}</pre>
     </div>
 
-    <p>File: <a href="{{ reverse("files-show", campaign.CSV.FileName)  }}" target="_blank">{{ campaign.CSV.FileName }}</a></p>
+    <p>File: <a href="{{ reverse("files-show", campaign.File.FileName)  }}" target="_blank">{{ campaign.File.FileName }}</a></p>
 
     <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
         <button>

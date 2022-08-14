@@ -1,0 +1,22 @@
+version: '3'
+
+volumes:
+  postgres:
+
+services:
+  postgres:
+    image: postgres:14.5
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    network_mode: host
+
+  mailhog:
+    # http port: 8025
+    # smtp port: 1025
+    image: mailhog/mailhog:v1.0.1
+    network_mode: host
+    environment:
+      MH_HOSTNAME: mailhog.example

@@ -1,0 +1,5 @@
+postgres:
+  dialect: postgres
+  datasource: dbname=mailmerger sslmode=disable user=${DB_USER} password=${DB_PASSWORD}
+  dir: db/migrations
+  table: db/migrations

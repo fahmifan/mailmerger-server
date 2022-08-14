@@ -13,14 +13,24 @@ import (
 	"github.com/fahmifan/ulids"
 	"github.com/rs/zerolog/log"
 	"go.etcd.io/bbolt"
+	"gorm.io/gorm"
 )
 
 var ErrNotFound = errors.New("not found error")
 
+type Audit struct {
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
 type Campaign struct {
-	ID       ulids.ULID
-	Name     string
-	CSV      CSV
+	ID     ulids.ULID
+	FileID ulids.ULID
+	Name   string
+	Audit
+
+	File     File
 	Template Template
 	Events   []Event
 }
@@ -29,15 +39,19 @@ func (c Campaign) IsNoEvent() bool {
 	return len(c.Events) == 0
 }
 
-type CSV struct {
+type File struct {
 	ID       ulids.ULID
-	Path     string
+	Folder   string
 	FileName string
+	Audit
 }
 
 type Template struct {
-	Body    string
-	Subject string
+	ID         ulids.ULID
+	CampaignID ulids.ULID
+	Body       string
+	Subject    string
+	Audit
 }
 
 type EventStatus string
@@ -48,9 +62,11 @@ const (
 )
 
 type Event struct {
-	CreatedAt time.Time
-	Status    EventStatus
-	Detail    string
+	ID         ulids.ULID
+	CampaignID ulids.ULID `gorm:"references:CampaignID"`
+	Detail     string
+	CreatedAt  time.Time
+	Status     EventStatus
 }
 
 type BlastEmailConfig struct {
@@ -73,40 +89,48 @@ type CreateCampaignRequest struct {
 }
 
 func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest) (campaign Campaign, err error) {
-	campaign = Campaign{
+	tx := c.cfg.db.WithContext(ctx)
+
+	newCampaign := Campaign{
 		ID:   ulids.New(),
 		Name: req.Name,
-		Template: Template{
-			Body:    req.BodyTemplate,
-			Subject: req.SubjectTemplate,
-		},
 	}
 
 	if req.CSV != nil {
-		campaign.CSV, err = c.createFile(ctx, req.CSV)
+		file, err := c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
-	}
 
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		err = bucket.Put([]byte(campaign.ID.ULID.String()), MarshalJson(campaign))
-		if err != nil {
-			return err
+		if err = tx.Create(&file).Error; err != nil {
+			return Campaign{}, err
 		}
-
-		return nil
-	})
-	if err != nil {
-		return Campaign{}, err
+		newCampaign.FileID = file.ID
 	}
+
+	template := Template{
+		ID:      ulids.New(),
+		Body:    req.BodyTemplate,
+		Subject: req.SubjectTemplate,
+	}
+	newCampaign.Template = template
+
+	if err = tx.Create(&newCampaign).Error; err != nil {
+		return
+	}
+
+	template.CampaignID = newCampaign.ID
+	if err = tx.Create(&template).Error; err != nil {
+		return
+	}
+
+	campaign = newCampaign
 	return
 }
 
 const csvFolder = "csvs"
 
-func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ CSV, err error) {
+func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ File, err error) {
 	id := ulids.New()
 
 	fileName := id.String() + ".csv"
@@ -114,47 +138,37 @@ func (c *CampaignService) createFile(ctx context.Context, csvFile io.Reader) (_ 
 
 	err = c.cfg.localStorage.Save(ctx, filePath, csvFile)
 	if err != nil {
-		return CSV{}, err
+		return File{}, err
 	}
 
-	return CSV{
+	return File{
 		ID:       id,
-		Path:     filePath,
+		Folder:   filePath,
 		FileName: fileName,
 	}, nil
 }
 
 func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err error) {
-	err = c.cfg.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		return bucket.ForEach(func(k, v []byte) error {
-			campaign := Campaign{}
-			err := json.Unmarshal(v, &campaign)
-			if err != nil {
-				return err
-			}
-			campaigns = append(campaigns, campaign)
-			return nil
-		})
-	})
-	return campaigns, err
+	if err = c.cfg.db.Model(&Campaign{}).
+		Preload("Events").
+		Preload("Template").
+		Preload("File").
+		Find(&campaigns).
+		Error; err != nil {
+		return
+	}
+
+	return
 }
 
 func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Campaign, err error) {
-	err = c.cfg.db.View(func(tx *bbolt.Tx) error {
-		bucket := tx.Bucket([]byte(CampaignBucket))
-		v := bucket.Get([]byte(id.String()))
-		err := json.Unmarshal(v, &campaign)
-		if err != nil {
-			return err
-		}
-		if v == nil {
-			return ErrNotFound
-		}
-		return json.Unmarshal(v, &campaign)
-	})
-	if err != nil {
-		return Campaign{}, err
+	if err = c.cfg.db.
+		Preload("File").
+		Preload("Template").
+		Preload("Events").
+		Take(&campaign, "id = ?", id).
+		Error; err != nil {
+		return
 	}
 	return campaign, nil
 }
@@ -180,13 +194,13 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 	}
 
 	if req.CSV != nil {
-		oldCampaign.CSV, err = c.createFile(ctx, req.CSV)
+		oldCampaign.File, err = c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
 	}
 
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
+	err = c.cfg.boltDB.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte(CampaignBucket))
 
 		key := []byte(oldCampaign.ID.ULID.String())
@@ -219,7 +233,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		return
 	}
 
-	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.CSV.Path)
+	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.File.Folder)
 	if err != nil {
 		return
 	}
@@ -248,7 +262,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	campaign.Events = append(campaign.Events, event)
-	err = c.cfg.db.Update(func(tx *bbolt.Tx) error {
+	err = c.cfg.boltDB.Update(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket([]byte(CampaignBucket))
 		return bucket.Put([]byte(campaign.ID.String()), MarshalJson(campaign))
 	})

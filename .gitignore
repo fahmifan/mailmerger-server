@@ -1,2 +1,4 @@
 *.bbolt.db
 /private
+/docker_volumes
+dbconfig.yml

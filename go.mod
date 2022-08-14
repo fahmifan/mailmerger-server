@@ -2,8 +2,6 @@ module github.com/fahmifan/mailmerger-server
 
 go 1.17
 
-replace github.com/fahmifan/mailmerger => /home/fahmifan/personal/fahmifan/mailmerger
-
 require (
 	github.com/fahmifan/mailmerger v0.0.0-20220812084507-041e6bd236c8
 	github.com/fahmifan/ulids v1.1.0

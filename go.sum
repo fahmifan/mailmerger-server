@@ -9,6 +9,8 @@ github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 h1:JWuenKqqX8nojt
 github.com/facebookgo/stack v0.0.0-20160209184415-751773369052/go.mod h1:UbMTZqLaRiH3MsBH8va0n7s1pQYcu3uTb8G4tygF4Zg=
 github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 h1:E2s37DuLxFhQDg5gKsWoLBOB0n+ZW8s599zru8FJ2/Y=
 github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870/go.mod h1:5tD+neXqOorC30/tWg0LCSkrqj/AR6gu8yY8/fpw1q0=
+github.com/fahmifan/mailmerger v0.0.0-20220812084507-041e6bd236c8 h1:mEfLCcd2nFNCy7VDkVM1C/zIkv64mZUXM/3qrXqG3Uw=
+github.com/fahmifan/mailmerger v0.0.0-20220812084507-041e6bd236c8/go.mod h1:oor+/tHmfOERVUIPuPj89+J/4Q49CbeLXJzFWKYcuiA=
 github.com/fahmifan/ulids v1.0.1 h1:eCNEkN0JV6eqC6KXDWg37bX2iz7KcebuioKYmJu5YKQ=
 github.com/fahmifan/ulids v1.0.1/go.mod h1:yflA/L4Y7d46mWy408i4kfMsd+Q1FaKuA12++7ciFs0=
 github.com/fahmifan/ulids v1.1.0 h1:Mc81ilaOAlCE3jkbSEIJFKaFuQUbcphK3/Zn+cw1WPY=

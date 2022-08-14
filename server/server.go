@@ -25,12 +25,10 @@ func (s *Server) Run() {
 
 func (s *Server) routes() {
 	s.echo = echo.New()
-	s.echo.Renderer = &PongoRenderer{
-		PongoRendererConfig: &PongoRendererConfig{
-			RootDir:      "server/templates",
-			DebugEnabled: true,
-		},
-	}
+	s.echo.Renderer = NewPongoRenderer(&PongoRendererConfig{
+		RootDir:      "server/templates",
+		DebugEnabled: true,
+	})
 	s.echo.Debug = true
 	setSecureCSRF := csrf.Secure(true)
 	csrfOpts := []csrf.Option{csrf.SameSite(csrf.SameSiteLaxMode), setSecureCSRF}

@@ -16,11 +16,33 @@
   {% endblock %}
 
   <style>
+    nav {
+        border-bottom: 1px solid black;
+    }
+
+    .navs ol {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .nav {
+        display: inline-block;
+    }
+
+    .nav a::after {
+        display: inline-block;
+        color: #000;
+        content: '|';
+        font-size: 80%;
+        font-weight: bold;
+        padding: 0 3px;
+    }
     {%block style%}
     {%endblock%}
   </style>
 </head>
 <body>
+{% include "partials/site_head.html" %}
 {% block content %}
 {% endblock %}
 </body>

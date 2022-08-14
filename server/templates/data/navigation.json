@@ -1,0 +1,14 @@
+{
+    "items": [
+        {
+            "text": "Home",
+            "url": "/",
+            "external": false
+        },
+        {
+            "text": "Campaign",
+            "url": "/campaigns",
+            "external": false
+        }
+    ]
+}

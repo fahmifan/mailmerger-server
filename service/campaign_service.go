@@ -24,7 +24,7 @@ type Audit struct {
 }
 
 type Campaign struct {
-	ID     ulids.ULID
+	ID     ulids.ULID `gorm:"primary_key"`
 	FileID *ulids.ULID
 	Name   string
 	Audit
@@ -39,14 +39,14 @@ func (c Campaign) IsNoEvent() bool {
 }
 
 type File struct {
-	ID       ulids.ULID
+	ID       ulids.ULID `gorm:"primary_key"`
 	Folder   string
 	FileName string
 	Audit
 }
 
 type Template struct {
-	ID         ulids.ULID
+	ID         ulids.ULID `gorm:"primary_key"`
 	CampaignID ulids.ULID
 	Body       string
 	Subject    string
@@ -114,7 +114,7 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 	}
 	newCampaign.Template = template
 
-	if err = tx.Create(&newCampaign).Error; err != nil {
+	if err = tx.Create(&newCampaign).Omit("Events", "Template", "File").Error; err != nil {
 		return
 	}
 
@@ -187,23 +187,50 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 	}
 
 	campaign.Name = req.Name
-	campaign.Template = Template{
-		Body:    req.BodyTemplate,
-		Subject: req.SubjectTemplate,
-	}
+
+	tx := c.cfg.db.WithContext(ctx)
 
 	if req.CSV != nil {
 		campaign.File, err = c.createFile(ctx, req.CSV)
 		if err != nil {
 			return Campaign{}, err
 		}
+
+		if err = tx.Create(&campaign.File).Error; err != nil {
+			return Campaign{}, err
+		}
 	}
 
-	err = c.cfg.db.Updates(&campaign).Error
-	if err != nil {
+	if err = c.cfg.db.Updates(&campaign).Omit("Events", "Template", "File").Error; err != nil {
 		return Campaign{}, err
 	}
+
+	tpl := Template{
+		ID:         ulids.New(),
+		CampaignID: campaign.ID,
+		Body:       req.BodyTemplate,
+		Subject:    req.SubjectTemplate,
+	}
+	if err = c.replaceTemplate(ctx, &campaign, &tpl); err != nil {
+		return
+	}
+
 	return campaign, nil
+}
+
+func (c *CampaignService) replaceTemplate(ctx context.Context, campaign *Campaign, tpl *Template) (err error) {
+	return c.cfg.db.Transaction(func(tx *gorm.DB) (err error) {
+		if err = tx.Delete(&campaign.Template).Error; err != nil {
+			return
+		}
+
+		if err = tx.Create(tpl).Error; err != nil {
+			return
+		}
+
+		campaign.Template = *tpl
+		return
+	})
 }
 
 type CreateBlastEmailEventRequest struct {
@@ -236,8 +263,9 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	event = Event{
-		CreatedAt: time.Now(),
-		Status:    EventStatusSuccess,
+		ID:         ulids.New(),
+		CampaignID: campaign.ID,
+		Status:     EventStatusSuccess,
 	}
 	if err = mailer.SendAll(ctx); err != nil {
 		log.Err(err).Msg("sendAll")
@@ -245,8 +273,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		event.Detail = err.Error()
 	}
 
-	campaign.Events = append(campaign.Events, event)
-	err = c.cfg.db.Updates(&campaign).Error
+	err = c.cfg.db.Create(&event).Error
 	if err != nil {
 		return Event{}, err
 	}

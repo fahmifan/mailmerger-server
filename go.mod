@@ -11,7 +11,6 @@ require (
 	github.com/mailgun/mailgun-go/v4 v4.8.1
 	github.com/rs/zerolog v1.27.0
 	github.com/spf13/cobra v1.5.0
-	go.etcd.io/bbolt v1.3.6
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gorm.io/driver/postgres v1.3.8
 	gorm.io/gorm v1.23.7

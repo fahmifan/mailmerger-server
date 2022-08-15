@@ -1,6 +1,6 @@
 # Mailmerger Server
 
-A server for Mailmerger
+A server for [Mailmerger](https://github.com/fahmifan/mailmerger)
 
 ## Development
 Tools to install:

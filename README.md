@@ -2,6 +2,11 @@
 
 A server for [Mailmerger](https://github.com/fahmifan/mailmerger)
 
+## Features
+- [x] Manage campaigns
+- [x] Custom templates
+- [x] Blast emails from imported csv files
+
 ## Development
 Tools to install:
 - [rubenv/sql-migrate: SQL schema migration tool for Go.](https://github.com/rubenv/sql-migrate)

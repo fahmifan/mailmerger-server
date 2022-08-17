@@ -1,7 +1,7 @@
 -- +migrate Up
 CREATE TABLE
   IF NOT EXISTS files (
-    id text primary key,
+    id varchar(255) primary key,
     file_name text not null,
     folder text not null,
     created_at timestamp not null default now(),
@@ -11,8 +11,9 @@ CREATE TABLE
 
 CREATE TABLE
   IF NOT EXISTS campaigns (
-    id text not null primary key,
-    file_id text REFERENCES files (id),
+    id varchar(255) not null primary key,
+    file_id varchar(255) REFERENCES files (id),
+    template_id varchar(255) null,
     "name" text not null,
     body text not null,
     "subject" text not null,
@@ -23,7 +24,7 @@ CREATE TABLE
 
 CREATE TABLE
   IF NOT EXISTS templates (
-    id text primary key,
+    id varchar(255) primary key,
     "name" varchar(255) not null, 
     html text not null,
     created_at timestamp not null default now(),
@@ -32,8 +33,8 @@ CREATE TABLE
   );
 
 CREATE TABLE IF NOT EXISTS events (
-    id text primary key,
-    campaign_id text not null references campaigns(id),
+    id varchar(255) primary key,
+    campaign_id varchar(255) not null references campaigns(id),
     detail text not null default '',
     "status" varchar(100) not null,
     created_at timestamp not null default now(),

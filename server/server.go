@@ -56,6 +56,9 @@ func (s *Server) routes() {
 	s.echo.GET("/files/:file_name", files.Show).Name = "files-show"
 
 	s.echo.GET("/templates", template.List).Name = "templates"
+	s.echo.GET("/templates/:id", template.Show).Name = "templates-show"
 	s.echo.GET("/templates/new", template.New).Name = "templates-new"
 	s.echo.POST("/templates", template.Create).Name = "templates-create"
+	s.echo.GET("/templates/:id/edit", template.Edit).Name = "templates-edit"
+	s.echo.POST("/templates/:id/update", template.Update).Name = "templates-update"
 }

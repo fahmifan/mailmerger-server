@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/fahmifan/mailmerger"
 	"github.com/fahmifan/ulids"
+	"github.com/flosch/pongo2"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/utils"
@@ -24,11 +26,12 @@ type Audit struct {
 }
 
 type Campaign struct {
-	ID      ulids.ULID `gorm:"primary_key"`
-	FileID  *ulids.ULID
-	Name    string
-	Body    string
-	Subject string
+	ID         ulids.ULID `gorm:"primary_key"`
+	FileID     *ulids.ULID
+	Name       string
+	Body       string
+	Subject    string
+	TemplateID *ulids.ULID
 	Audit
 
 	File   File
@@ -218,6 +221,25 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		return
 	}
 
+	body := bytes.NewBuffer(nil)
+	if campaign.TemplateID != nil {
+		tpl, err := c.findTemplate(ctx, *campaign.TemplateID)
+		if err != nil {
+			return Event{}, err
+		}
+		pongoTpl, err := pongo2.FromString(tpl.HTML)
+		if err != nil {
+			return Event{}, err
+		}
+
+		err = pongoTpl.ExecuteWriter(pongo2.Context{"body": campaign.Body}, body)
+		if err != nil {
+			return Event{}, err
+		}
+	} else {
+		body.WriteString(campaign.Body)
+	}
+
 	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.File.Folder)
 	if err != nil {
 		return
@@ -227,7 +249,7 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	mailer := mailmerger.NewMailer(&mailmerger.MailerConfig{
 		SenderEmail:     c.cfg.blastEmailCfg.Sender,
 		CsvSrc:          csvFile,
-		BodyTemplate:    strings.NewReader(campaign.Body),
+		BodyTemplate:    body,
 		SubjectTemplate: strings.NewReader(campaign.Subject),
 		Concurrency:     2,
 		Transporter:     c.cfg.blastEmailCfg.Transporter,
@@ -253,4 +275,9 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	return event, nil
+}
+
+func (c *CampaignService) findTemplate(ctx context.Context, id ulids.ULID) (tpl Template, err error) {
+	err = c.cfg.db.Take(&tpl, "id = ?", id).Error
+	return tpl, unwrapErr(err)
 }

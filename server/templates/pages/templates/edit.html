@@ -1,0 +1,52 @@
+{% extends "../../base.html" %}
+
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block content%}
+
+{%block style%}
+<style>
+    #editor {
+        position: absolute;
+        width: 800px;
+        height: 400px;
+        font-size: 16px;
+    }
+</style>
+{%endblock%}
+
+<main>
+    <h1>New Template</h1>
+    <form action="{{reverse("templates-update", template.ID)}}" method="post" enctype="multipart/form-data">
+        {{ csrfField | safe }}
+
+        <input type="hidden" name="id" value="{{template.ID}}">
+
+        <div style="display: flex; margin-bottom: 1em;">
+            <input type="text" name="name" id="name" value="{{template.Name}}">
+            <input style="display: block;" type="submit" value="Save">
+        </div>
+
+        <input type="hidden" id="html_body" name="html">
+    </form>
+
+    <div id="editor">{{ template.HTML }}</div>
+</main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+
+    let htmlBodyEl = document.querySelector("#html_body")
+    htmlBodyEl.value = editor.getValue()
+    editor.on("change", function(el) {
+        htmlBodyEl.value = editor.getValue()
+    })
+</script>
+
+{%endblock%}
+

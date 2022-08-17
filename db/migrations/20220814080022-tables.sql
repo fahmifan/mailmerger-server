@@ -24,7 +24,7 @@ CREATE TABLE
 CREATE TABLE
   IF NOT EXISTS templates (
     id text primary key,
-    campaign_id text not null references campaigns(id),
+    "name" varchar(255) not null, 
     html text not null,
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),

@@ -14,6 +14,7 @@ type Config struct {
 type Service struct {
 	CampaignService *CampaignService
 	FileService     *FileService
+	TemplateService *TemplateService
 }
 
 func NewService(db *gorm.DB, localStorage *localfs.Storage, blastEmailCfg *BlastEmailConfig) *Service {
@@ -25,5 +26,6 @@ func NewService(db *gorm.DB, localStorage *localfs.Storage, blastEmailCfg *Blast
 	return &Service{
 		CampaignService: &CampaignService{&cfg},
 		FileService:     &FileService{&cfg},
+		TemplateService: &TemplateService{&cfg},
 	}
 }

@@ -38,6 +38,7 @@ func (s *Server) routes() {
 	campaign := CampaignHandler{s}
 	event := EventHandler{s}
 	files := FileHandler{s}
+	template := TemplateHandler{s}
 
 	s.echo.Use(echo.WrapMiddleware(csrfMiddleware))
 
@@ -53,4 +54,8 @@ func (s *Server) routes() {
 	s.echo.POST("/events", event.Create).Name = "events-create"
 
 	s.echo.GET("/files/:file_name", files.Show).Name = "files-show"
+
+	s.echo.GET("/templates", template.List).Name = "templates"
+	s.echo.GET("/templates/new", template.New).Name = "templates-new"
+	s.echo.POST("/templates", template.Create).Name = "templates-create"
 }

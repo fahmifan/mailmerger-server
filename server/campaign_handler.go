@@ -14,15 +14,6 @@ type CampaignHandler struct {
 	*Server
 }
 
-func systemError(ec echo.Context, err error) error {
-	log.Err(err).Msg("")
-	return ec.Render(http.StatusOK, "pages/system_error.html", echo.Map{})
-}
-
-func notFound(ec echo.Context) error {
-	return ec.Render(http.StatusNotFound, "pages/not_found_error.html", echo.Map{})
-}
-
 func (m CampaignHandler) List(ec echo.Context) (err error) {
 	campaigns, err := m.service.CampaignService.List(ec.Request().Context())
 	if err != nil {

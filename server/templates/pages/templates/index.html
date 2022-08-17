@@ -1,0 +1,21 @@
+{% extends "../../base.html" %}
+
+{%block content%}
+
+<main>
+    <h1>Templates</h1>
+    <a href="{{ reverse("templates-new") }}">
+        <button>New</button>
+    </a>
+    {% for template in templates %}
+    <ul>
+        <li>
+            <a href="{{ reverse("templates-show", template.ID) }}">
+                {{ template.Name }}
+            </a>
+        </li>
+    </ul>
+    {% endfor %}
+</main>
+
+{%endblock%}

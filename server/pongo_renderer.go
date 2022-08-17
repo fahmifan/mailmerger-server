@@ -65,6 +65,8 @@ func (r *PongoRenderer) Render(w io.Writer, name string, data interface{}, ec ec
 		default:
 			ctx = make(pongo2.Context)
 		}
+	} else {
+		ctx = make(pongo2.Context)
 	}
 
 	tpl, err := r.getTemplate(name)

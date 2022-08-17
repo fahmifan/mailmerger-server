@@ -66,13 +66,6 @@ type File struct {
 	Audit
 }
 
-type Template struct {
-	ID         ulids.ULID `gorm:"primary_key"`
-	CampaignID ulids.ULID
-	HTML       string
-	Audit
-}
-
 type EventStatus string
 
 const (

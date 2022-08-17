@@ -15,6 +15,9 @@
   <title>Mail Merger</title>
   {% endblock %}
 
+  {% block head_script %}
+  {% endblock %}
+
   <style>
     nav {
         border-bottom: 1px solid black;
@@ -37,12 +40,13 @@
         font-weight: bold;
         padding: 0 3px;
     }
-    {%block style%}
-    {%endblock%}
   </style>
+  {%block style%}
+  {%endblock%}
 </head>
 <body>
 {% include "partials/site_head.html" %}
 {% block content %}
 {% endblock %}
+
 </body>

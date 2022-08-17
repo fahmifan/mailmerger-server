@@ -39,6 +39,8 @@ erDiagram
 		id string
 		file_id string
 		template_id string
+		subject string
+		body string
 	}
 	File {
 		id string
@@ -46,8 +48,9 @@ erDiagram
 		path string
 	}
 	Template {
-		body string
-		subject string
+		id string
+		name string
+		html string
 	}
 	Event {
 		id string

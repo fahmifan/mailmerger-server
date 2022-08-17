@@ -34,8 +34,9 @@ type Campaign struct {
 	TemplateID *ulids.ULID
 	Audit
 
-	File   File
-	Events []Event
+	File     File
+	Events   []Event
+	Template *Template `gorm:"->;foreignKey:TemplateID"`
 }
 
 func (c *Campaign) BeforeCreate(tx *gorm.DB) error {
@@ -168,6 +169,7 @@ func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err e
 
 func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Campaign, err error) {
 	if err = c.cfg.db.
+		Preload("Template").
 		Preload("File").
 		Preload("Events").
 		Take(&campaign, "id = ?", id).
@@ -178,11 +180,12 @@ func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Cam
 }
 
 type UpdateCampaignRequest struct {
-	ID      ulids.ULID `form:"id"`
-	Name    string     `form:"name"`
-	Body    string     `form:"body"`
-	Subject string     `form:"subject"`
-	CSV     io.Reader  `form:"-"`
+	ID         ulids.ULID  `form:"id"`
+	Name       string      `form:"name"`
+	Body       string      `form:"body"`
+	Subject    string      `form:"subject"`
+	CSV        io.Reader   `form:"-"`
+	TemplateID *ulids.ULID `form:"template_id"`
 }
 
 func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest) (_ Campaign, err error) {
@@ -194,6 +197,9 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 	campaign.Name = req.Name
 	campaign.Body = req.Body
 	campaign.Subject = req.Subject
+	if req.TemplateID != nil {
+		campaign.TemplateID = req.TemplateID
+	}
 
 	if req.CSV != nil {
 		campaign.File, err = c.createFileIfAny(ctx, req.CSV)

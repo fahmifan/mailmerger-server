@@ -31,6 +31,18 @@
         <label for="csv">CSV</label>
         <input type="file" name="csv" id="csv" accept=".csv">
 
+        <label for="Template">Template</label>
+        <select name="template_id" id="template">
+            <option value="" style="color:gray; font-style: italic">No Template</option>
+        {% for template in templates %}
+            {% if campaign.Template.ID == template.ID %}
+            <option value="{{template.ID}}" selected>{{template.Name}}</option>
+            {% else %}
+            <option value="{{template.ID}}">{{template.Name}}</option>
+            {% endif %}
+        {% endfor %}
+        </select>
+
         <label for="subject">Subject</label>
         <textarea name="subject" id="subject" cols="50" rows="1">{{campaign.Subject}}</textarea>
 

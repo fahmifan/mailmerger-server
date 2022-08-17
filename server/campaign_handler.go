@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/fahmifan/mailmerger-server/service"
@@ -88,7 +89,17 @@ func (m CampaignHandler) Edit(ec echo.Context) (err error) {
 		return systemError(ec, err)
 	}
 
-	return ec.Render(http.StatusOK, "pages/campaigns/edit.html", echo.Map{"campaign": campaign})
+	templates, err := m.service.TemplateService.FindAll(ec.Request().Context())
+	if err != nil {
+		return systemError(ec, err)
+	}
+
+	payload := echo.Map{
+		"campaign":  campaign,
+		"templates": templates,
+	}
+
+	return ec.Render(http.StatusOK, "pages/campaigns/edit.html", payload)
 }
 
 func (m CampaignHandler) Update(ec echo.Context) (err error) {
@@ -97,7 +108,15 @@ func (m CampaignHandler) Update(ec echo.Context) (err error) {
 		log.Err(err).Msg("create campaign - bind")
 		return ec.Redirect(http.StatusSeeOther, m.echo.Reverse("campaigns-new"))
 	}
+	if tplIDForm := ec.FormValue("template_id"); tplIDForm != "" {
+		templateID, err := ulids.Parse(tplIDForm)
+		if err != nil {
+			return badRequest(ec)
+		}
+		req.TemplateID = &templateID
+	}
 
+	fmt.Println("DEBUG >>> templateID", req.TemplateID)
 	const mb = 1024 * 1024
 	const maxMem = 2 * mb
 	if err := ec.Request().ParseMultipartForm(maxMem); err != nil {

@@ -1,0 +1,49 @@
+{% extends "../../base.html" %}
+
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block style%}
+<style>
+    #editor {
+        width: 800px;
+        height: 400px;
+        font-size: 18px;
+    }
+</style>
+{%endblock%}
+
+{%block content%}
+
+<main>
+    <h1>Template</h1>
+    <p>ID: {{ template.ID }}</p>
+    <p>Name: {{ template.Name }}</p>
+
+    <label for="subject">Subject</label>
+    <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">
+        <pre id="subject">{{ template.Subject }}</pre>
+    </div>
+
+    <label for="body">Body</label>
+    <div id="editor">{{template.Body}}</div>
+
+    <p>File: <a href="{{ reverse("files-show", template.File.FileName)  }}" target="_blank">{{ template.File.FileName }}</a></p>
+
+    <a href="{{ reverse("templates-edit", template.ID) }}">
+        <button>
+            Edit
+        </button>
+    </a>
+</main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+    editor.setReadOnly(true)
+</script>
+
+{%endblock%}

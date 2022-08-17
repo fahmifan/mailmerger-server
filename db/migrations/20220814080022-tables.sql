@@ -14,6 +14,8 @@ CREATE TABLE
     id text not null primary key,
     file_id text REFERENCES files (id),
     "name" text not null,
+    body text not null,
+    "subject" text not null,
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),
     deleted_at timestamp
@@ -23,8 +25,7 @@ CREATE TABLE
   IF NOT EXISTS templates (
     id text primary key,
     campaign_id text not null references campaigns(id),
-    body text not null,
-    "subject" text not null,
+    html text not null,
     created_at timestamp not null default now(),
     updated_at timestamp not null default now(),
     deleted_at timestamp

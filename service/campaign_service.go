@@ -24,14 +24,15 @@ type Audit struct {
 }
 
 type Campaign struct {
-	ID     ulids.ULID `gorm:"primary_key"`
-	FileID *ulids.ULID
-	Name   string
+	ID      ulids.ULID `gorm:"primary_key"`
+	FileID  *ulids.ULID
+	Name    string
+	Body    string
+	Subject string
 	Audit
 
-	File     File
-	Template Template
-	Events   []Event
+	File   File
+	Events []Event
 }
 
 func (c *Campaign) BeforeCreate(tx *gorm.DB) error {
@@ -68,8 +69,7 @@ type File struct {
 type Template struct {
 	ID         ulids.ULID `gorm:"primary_key"`
 	CampaignID ulids.ULID
-	Body       string
-	Subject    string
+	HTML       string
 	Audit
 }
 
@@ -102,8 +102,8 @@ const CampaignBucket = "campaigns"
 
 type CreateCampaignRequest struct {
 	Name            string    `form:"name"`
-	BodyTemplate    string    `form:"body_template"`
-	SubjectTemplate string    `form:"subject_template"`
+	BodyTemplate    string    `form:"body"`
+	SubjectTemplate string    `form:"subject"`
 	CSV             io.Reader `form:"-"`
 }
 
@@ -122,14 +122,8 @@ func (c *CampaignService) Create(ctx context.Context, req CreateCampaignRequest)
 		}
 		campaign.FileID = &file.ID
 	}
-
-	template := Template{
-		ID:         ulids.New(),
-		Body:       req.BodyTemplate,
-		CampaignID: campaign.ID,
-		Subject:    req.SubjectTemplate,
-	}
-	campaign.Template = template
+	campaign.Body = req.BodyTemplate
+	campaign.Subject = req.SubjectTemplate
 
 	if err = tx.Create(&campaign).Error; err != nil {
 		return
@@ -167,7 +161,6 @@ func (c *CampaignService) createFileIfAny(ctx context.Context, csvFile io.Reader
 func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err error) {
 	if err = c.cfg.db.Model(&Campaign{}).
 		Preload("Events").
-		Preload("Template").
 		Preload("File").
 		Find(&campaigns).
 		Error; err != nil {
@@ -180,7 +173,6 @@ func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err e
 func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Campaign, err error) {
 	if err = c.cfg.db.
 		Preload("File").
-		Preload("Template").
 		Preload("Events").
 		Take(&campaign, "id = ?", id).
 		Error; err != nil {
@@ -190,11 +182,11 @@ func (c *CampaignService) Find(ctx context.Context, id ulids.ULID) (campaign Cam
 }
 
 type UpdateCampaignRequest struct {
-	ID              ulids.ULID `form:"id"`
-	Name            string     `form:"name"`
-	BodyTemplate    string     `form:"body_template"`
-	SubjectTemplate string     `form:"subject_template"`
-	CSV             io.Reader  `form:"-"`
+	ID      ulids.ULID `form:"id"`
+	Name    string     `form:"name"`
+	Body    string     `form:"body"`
+	Subject string     `form:"subject"`
+	CSV     io.Reader  `form:"-"`
 }
 
 func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest) (_ Campaign, err error) {
@@ -204,6 +196,8 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 	}
 
 	campaign.Name = req.Name
+	campaign.Body = req.Body
+	campaign.Subject = req.Subject
 
 	if req.CSV != nil {
 		campaign.File, err = c.createFileIfAny(ctx, req.CSV)
@@ -217,32 +211,7 @@ func (c *CampaignService) Update(ctx context.Context, req UpdateCampaignRequest)
 		return Campaign{}, err
 	}
 
-	tpl := Template{
-		ID:         ulids.New(),
-		CampaignID: campaign.ID,
-		Body:       req.BodyTemplate,
-		Subject:    req.SubjectTemplate,
-	}
-	if err = c.replaceTemplate(ctx, &campaign, &tpl); err != nil {
-		return
-	}
-
 	return campaign, nil
-}
-
-func (c *CampaignService) replaceTemplate(ctx context.Context, campaign *Campaign, tpl *Template) (err error) {
-	return c.cfg.db.Transaction(func(tx *gorm.DB) (err error) {
-		if err = tx.Delete(&campaign.Template).Error; err != nil {
-			return
-		}
-
-		if err = tx.Create(tpl).Error; err != nil {
-			return
-		}
-
-		campaign.Template = *tpl
-		return
-	})
 }
 
 type CreateBlastEmailEventRequest struct {
@@ -265,8 +234,8 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	mailer := mailmerger.NewMailer(&mailmerger.MailerConfig{
 		SenderEmail:     c.cfg.blastEmailCfg.Sender,
 		CsvSrc:          csvFile,
-		BodyTemplate:    strings.NewReader(campaign.Template.Body),
-		SubjectTemplate: strings.NewReader(campaign.Template.Subject),
+		BodyTemplate:    strings.NewReader(campaign.Body),
+		SubjectTemplate: strings.NewReader(campaign.Subject),
 		Concurrency:     2,
 		Transporter:     c.cfg.blastEmailCfg.Transporter,
 	})

@@ -27,7 +27,13 @@
     <p>ID: {{ campaign.ID }}</p>
     <p>Name: {{ campaign.Name }}</p>
     <p>File: <a href="{{ reverse("files-show", campaign.File.FileName)  }}" target="_blank">{{ campaign.File.FileName }}</a></p>
-    <p>Template: {{ campaign.Template.Name }}</p>
+    <p>Template: 
+        {%if campaign.HasNoTemplate() %}
+            <i>No Template</i>
+        {%else%}
+        {{ campaign.Template.Name }}
+        {%endif%}
+    </p>
 
     <label for="subject">Subject</label>
     <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">

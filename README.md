@@ -60,3 +60,12 @@ erDiagram
 	}
 
 ```
+
+### Pages
+![home](doc/localhost_8080_.png)
+![campaigns](doc/localhost_8080_campaigns.png)
+![campaigns show](doc/localhost_8080_campaigns_01GAMT1JFKYHVYHNJKEP4E0XC3.png)
+![campaigns edit](doc/localhost_8080_campaigns_01GAMT1JFKYHVYHNJKEP4E0XC3_edit.png)
+![templates](doc/localhost_8080_templates.png)
+![templates show](doc/localhost_8080_templates_01GAMXWK6BBZE6W4QHZMKBB7C5.png)
+![templates edit](doc/localhost_8080_templates_01GAMXWK6BBZE6W4QHZMKBB7C5_edit.png)

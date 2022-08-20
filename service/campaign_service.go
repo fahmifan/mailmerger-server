@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"path"
 	"strings"
@@ -165,6 +166,7 @@ func (c *CampaignService) List(ctx context.Context) (campaigns []Campaign, err e
 	if err = c.cfg.db.Model(&Campaign{}).
 		Preload("Events").
 		Preload("File").
+		Order("created_at desc").
 		Find(&campaigns).
 		Error; err != nil {
 		return
@@ -292,6 +294,18 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 	}
 
 	return event, nil
+}
+
+func (c *CampaignService) Delete(ctx context.Context, id ulids.ULID) (campaign Campaign, err error) {
+	if campaign, err = c.Find(ctx, id); err != nil {
+		return Campaign{}, fmt.Errorf("find old campaign: %w", err)
+	}
+
+	if err = c.cfg.db.WithContext(ctx).Delete(&campaign).Error; err != nil {
+		return Campaign{}, fmt.Errorf("delete: %w", err)
+	}
+
+	return campaign, nil
 }
 
 func (c *CampaignService) findTemplate(ctx context.Context, id ulids.ULID) (tpl Template, err error) {

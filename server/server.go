@@ -50,6 +50,7 @@ func (s *Server) routes() {
 	s.echo.GET("/campaigns/:id", campaign.Show).Name = "campaigns-show"
 	s.echo.GET("/campaigns/:id/edit", campaign.Edit).Name = "campaigns-edit"
 	s.echo.POST("/campaigns/:id/update", campaign.Update).Name = "campaigns-update"
+	s.echo.POST("/campaigns/:id/delete", campaign.Delete).Name = "campaigns-delete"
 
 	s.echo.POST("/events", event.Create).Name = "events-create"
 

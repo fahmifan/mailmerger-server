@@ -141,6 +141,20 @@ func (m CampaignHandler) Update(ec echo.Context) (err error) {
 	return ec.Redirect(http.StatusSeeOther, m.echo.Reverse("campaigns-show", req.ID))
 }
 
+func (m CampaignHandler) Delete(ec echo.Context) (err error) {
+	id, err := ulids.Parse(ec.Param("id"))
+	if err != nil {
+		return notFound(ec)
+	}
+
+	_, err = m.service.CampaignService.Delete(ec.Request().Context(), id)
+	if err != nil {
+		return systemError(ec, err)
+	}
+
+	return ec.Redirect(http.StatusSeeOther, m.echo.Reverse("campaigns"))
+}
+
 // parseEmptyNilID set id to nil if id is empty
 // else parse the id
 func parseEmptyNilID(uid **ulids.ULID, id string) error {

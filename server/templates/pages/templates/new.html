@@ -1,0 +1,62 @@
+{% extends "../../base.html" %}
+
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block content%}
+
+{%block style%}
+<style>
+    #editor {
+        position: absolute;
+        width: 800px;
+        height: 400px;
+        font-size: 16px;
+    }
+</style>
+{%endblock%}
+
+<main>
+    <h1>New Template</h1>
+    <form action="/templates" method="post" enctype="multipart/form-data">
+        {{ csrfField | safe }}
+
+        <div style="display: flex; margin-bottom: 1em;">
+            <input type="text" name="name" id="name" placeholder="Template name">
+            <input style="display: block;" type="submit" value="Save">
+        </div>
+
+        <input type="hidden" id="html_body" name="html">
+    </form>
+
+    <div id="editor"></div>
+</main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+    editor.insert(`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    
+</body>
+</html>`)
+
+    let htmlBodyEl = document.querySelector("#html_body")
+    htmlBodyEl.value = editor.getValue()
+    editor.on("change", function(el) {
+        htmlBodyEl.value = editor.getValue()
+    })
+</script>
+
+{%endblock%}
+

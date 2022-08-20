@@ -1,0 +1,43 @@
+{% extends "../../base.html" %}
+
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block style%}
+<style>
+    #editor {
+        width: 800px;
+        height: 400px;
+        font-size: 18px;
+    }
+</style>
+{%endblock%}
+
+{%block content%}
+
+<main>
+    <h1>Template</h1>
+    <a href="{{ reverse("templates-edit", template.ID) }}">
+        <button>
+            Edit
+        </button>
+    </a>
+
+    <p>ID: {{ template.ID }}</p>
+    <p>Name: {{ template.Name }}</p>
+
+    <label for="body">Body</label>
+    <div id="editor">{{template.HTML}}</div>
+
+</main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+    editor.setReadOnly(true)
+</script>
+
+{%endblock%}

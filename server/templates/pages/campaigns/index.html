@@ -7,15 +7,34 @@
     <a href="{{ reverse("campaigns-new") }}">
         <button>New</button>
     </a>
-    {% for campaign in campaigns %}
-    <ul>
-        <li>
-            <a href="{{ reverse("campaigns-show", campaign.ID) }}">
-                {{ campaign.Name }}
-            </a>
-        </li>
-    </ul>
-    {% endfor %}
+    <table>
+        <thead>
+            <th>Campaign</th>
+            <th>Action</th>
+        </thead>
+        <tbody>
+            {% for campaign in campaigns %}
+            <tr>
+                <td> 
+                    <a href="{{ reverse("campaigns-show", campaign.ID) }}">
+                    {{ campaign.Name }}
+                    </a>
+                </td>
+                <td style="display: flex;">
+                        <form action="{{ reverse("campaigns-edit", campaign.ID) }}" method="get">
+                            {{ csrfField | safe }}
+                            <input type="submit" value="Edit">
+                        </form>
+                    </a>
+                    <form action="{{ reverse("campaigns-delete", campaign.ID) }}" method="post">
+                        {{ csrfField | safe }}
+                        <input type="submit" value="Delete">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </main>
 
 {%endblock%}

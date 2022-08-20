@@ -2,6 +2,11 @@
 
 A server for [Mailmerger](https://github.com/fahmifan/mailmerger)
 
+## Features
+- [x] Manage campaigns
+- [x] Custom templates
+- [x] Blast emails from imported csv files
+
 ## Development
 Tools to install:
 - [rubenv/sql-migrate: SQL schema migration tool for Go.](https://github.com/rubenv/sql-migrate)
@@ -34,6 +39,8 @@ erDiagram
 		id string
 		file_id string
 		template_id string
+		subject string
+		body string
 	}
 	File {
 		id string
@@ -41,8 +48,9 @@ erDiagram
 		path string
 	}
 	Template {
-		body string
-		subject string
+		id string
+		name string
+		html string
 	}
 	Event {
 		id string
@@ -52,3 +60,12 @@ erDiagram
 	}
 
 ```
+
+### Pages
+![home](doc/localhost_8080_.png)
+![campaigns](doc/localhost_8080_campaigns.png)
+![campaigns show](doc/localhost_8080_campaigns_01GAMT1JFKYHVYHNJKEP4E0XC3.png)
+![campaigns edit](doc/localhost_8080_campaigns_01GAMT1JFKYHVYHNJKEP4E0XC3_edit.png)
+![templates](doc/localhost_8080_templates.png)
+![templates show](doc/localhost_8080_templates_01GAMXWK6BBZE6W4QHZMKBB7C5.png)
+![templates edit](doc/localhost_8080_templates_01GAMXWK6BBZE6W4QHZMKBB7C5_edit.png)

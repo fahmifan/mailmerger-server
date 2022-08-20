@@ -1,11 +1,26 @@
 {% extends "../../base.html" %}
 
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block style%}
+<style>
+    #editor {
+        width: 800px;
+        min-height: 400px;
+        font-size: 16px;
+    }
+</style>
+{%endblock%}
+
 {%block content%}
 
 <main>
     <h1>Edit Campaign</h1>
     <p><b>ID:</b> <i>{{ campaign.ID }}</i></p>
-    <form action="/campaigns/{{ campaign.ID }}/update" method="post" enctype="multipart/form-data">
+    <form action="{{reverse("campaigns-update", campaign.ID)}}" method="post" enctype="multipart/form-data">
         {{ csrfField | safe }}
 
         <input type="hidden" name="id" value="{{ campaign.ID }}">
@@ -13,18 +28,44 @@
         <label for="name">Name</label>
         <input type="text" name="name" id="name" value="{{campaign.Name}}">
 
-        <label for="subject">Subject Template</label>
-        <textarea name="subject" id="subject" cols="50" rows="1">{{campaign.Template.Subject}}</textarea>
-
-        <label for="body">Body Template</label>
-        <textarea name="body" id="body" cols="80" rows="10">{{campaign.Template.Body}}</textarea>
-
         <label for="csv">CSV</label>
         <input type="file" name="csv" id="csv" accept=".csv">
 
+        <label for="Template">Template</label>
+        <select name="template_id" id="template">
+            <option value="" style="color:gray; font-style: italic">No Template</option>
+        {% for template in templates %}
+            {% if campaign.Template.ID == template.ID %}
+            <option value="{{template.ID}}" selected>{{template.Name}}</option>
+            {% else %}
+            <option value="{{template.ID}}">{{template.Name}}</option>
+            {% endif %}
+        {% endfor %}
+        </select>
+
+        <label for="subject">Subject</label>
+        <textarea name="subject" id="subject" cols="50" rows="1">{{campaign.Subject}}</textarea>
+
+        <label for="body">Body</label>
+        <div id="editor">{{campaign.Body}}</div>
+        <input type="hidden" name="body" id="body" value="{{campaign.Body}}"></input>
+
+        <br>
         <input type="submit" value="Save">
     </form>
 </main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+    
+    let htmlBodyEl = document.querySelector("#body")
+    htmlBodyEl.value = editor.getValue()
+    editor.on("change", function(el) {
+        htmlBodyEl.value = editor.getValue()
+    })
+</script>
 
 
 {%endblock%}

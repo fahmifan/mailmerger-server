@@ -1,11 +1,39 @@
 {% extends "../../base.html" %}
 
+{%block head_script%}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/ace.min.js" type="text/javascript" charset="utf-8"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.5/mode-html.min.js" type="text/javascript" charset="utf-8"></script>
+{%endblock%}
+
+{%block style%}
+<style>
+    #editor {
+        width: 800px;
+        min-height: 100px;
+        font-size: 16px;
+    }
+</style>
+{%endblock%}
+
 {%block content%}
 
 <main>
     <h1>Campaign</h1>
+    <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
+        <button>
+            Edit
+        </button>
+    </a>
     <p>ID: {{ campaign.ID }}</p>
     <p>Name: {{ campaign.Name }}</p>
+    <p>File: <a href="{{ reverse("files-show", campaign.File.FileName)  }}" target="_blank">{{ campaign.File.FileName }}</a></p>
+    <p>Template: 
+        {%if campaign.HasNoTemplate() %}
+            <i>No Template</i>
+        {%else%}
+        {{ campaign.Template.Name }}
+        {%endif%}
+    </p>
 
     <label for="subject">Subject</label>
     <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">
@@ -13,17 +41,7 @@
     </div>
 
     <label for="body">Body</label>
-    <div  style="border: 2px solid gray; border-radius: 4px; margin-top: 8px; margin-bottom: 8px; padding-left: 8px">
-        <pre id="body">{{ campaign.Body }}</pre>
-    </div>
-
-    <p>File: <a href="{{ reverse("files-show", campaign.File.FileName)  }}" target="_blank">{{ campaign.File.FileName }}</a></p>
-
-    <a href="{{ reverse("campaigns-edit", campaign.ID) }}">
-        <button>
-            Edit
-        </button>
-    </a>
+    <div id="editor">{{campaign.Body}}</div>
 
     <h2>Events</h2>
     <form action="{{ reverse("events-create") }}" method="post">
@@ -61,5 +79,12 @@
     </div>
     {% endif %}
 </main>
+
+<script>
+    let editor = ace.edit("editor");
+    let HtmlMode = ace.require("ace/mode/html").Mode;
+    editor.session.setMode(new HtmlMode())
+    editor.setReadOnly(true)
+</script>
 
 {%endblock%}

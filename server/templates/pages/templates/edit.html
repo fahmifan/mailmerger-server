@@ -19,7 +19,7 @@
 {%endblock%}
 
 <main>
-    <h1>New Template</h1>
+    <h1>Edit Template</h1>
     <form action="{{reverse("templates-update", template.ID)}}" method="post" enctype="multipart/form-data">
         {{ csrfField | safe }}
 

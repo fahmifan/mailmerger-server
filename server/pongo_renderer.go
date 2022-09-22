@@ -6,7 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/flosch/pongo2"
+	"github.com/fahmifan/mailmerger-server/server/templates"
+	"github.com/flosch/pongo2/v6"
 	"github.com/gorilla/csrf"
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
@@ -18,6 +19,8 @@ var _ echo.Renderer = (*PongoRenderer)(nil)
 type PongoRenderer struct {
 	*PongoRendererConfig
 	globalData map[string]interface{}
+	fsLoader   *pongo2.FSLoader
+	tplSet     *pongo2.TemplateSet
 }
 type PongoRendererConfig struct {
 	BaseURL      string
@@ -29,6 +32,7 @@ type PongoRendererConfig struct {
 func NewPongoRenderer(cfg *PongoRendererConfig) *PongoRenderer {
 	pr := &PongoRenderer{PongoRendererConfig: cfg}
 	pr.loadGlobalData()
+	pr.tplSet = pongo2.NewSet("embedFs", pongo2.NewFSLoader(templates.FS()))
 	return pr
 }
 
@@ -92,11 +96,10 @@ func (r *PongoRenderer) Render(w io.Writer, name string, data interface{}, ec ec
 }
 
 func (r *PongoRenderer) getTemplate(name string) (tpl *pongo2.Template, err error) {
-	name = path.Join(r.RootDir, name)
 	if r.DebugEnabled {
-		tpl, err = pongo2.FromFile(name)
+		tpl, err = pongo2.FromFile(path.Join(r.RootDir, name))
 	} else {
-		tpl, err = pongo2.FromCache(name)
+		tpl, err = r.tplSet.FromCache(name)
 	}
 
 	return

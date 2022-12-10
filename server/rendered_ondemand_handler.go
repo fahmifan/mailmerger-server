@@ -7,18 +7,14 @@ import (
 	"github.com/fahmifan/mailmerger-server/service"
 	"github.com/fahmifan/ulids"
 	"github.com/labstack/echo/v4"
+	"github.com/rs/zerolog/log"
 )
 
 type RenderOnDemandHandler struct {
 	*Server
 }
 
-func (handler RenderOnDemandHandler) Show(ec echo.Context) error {
-	campaignID, err := ulids.Parse(ec.Param("campaign_id"))
-	if err != nil {
-		return badRequest(ec, "invalid campaign_id")
-	}
-
+func (handler RenderOnDemandHandler) Show(ec echo.Context) (err error) {
 	templateIdStr := ec.QueryParam("templateID")
 	body := ec.QueryParam("body")
 
@@ -26,21 +22,23 @@ func (handler RenderOnDemandHandler) Show(ec echo.Context) error {
 		rendered   []byte
 		templateID ulids.ULID
 	)
-	if templateIdStr != "" {
-		templateID, err = ulids.Parse(templateIdStr)
-		if err != nil {
-			return badRequest(ec, "invalid query param templateID")
-		}
-		rendered, err = handler.service.CampaignService.RenderByIDAndBodyAndTemplate(ec.Request().Context(), campaignID, templateID, body)
-	} else {
-		rendered, err = handler.service.CampaignService.RenderByIDAndBody(ec.Request().Context(), campaignID, body)
+	if templateIdStr == "" {
+		return ec.HTML(http.StatusOK, body)
 	}
+
+	templateID, err = ulids.Parse(templateIdStr)
+	if err != nil {
+		return ec.HTML(http.StatusBadRequest, "")
+	}
+
+	rendered, err = handler.service.CampaignService.RenderByBodyAndTemplate(ec.Request().Context(), templateID, body)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrNotFound):
-			return notFound(ec)
+			return ec.HTML(http.StatusNotFound, "")
 		default:
-			return systemError(ec, err)
+			log.Err(err).Msg("RenderOnDemandHandler-RenderByBodyAndTemplate")
+			return ec.HTML(http.StatusInternalServerError, "")
 		}
 	}
 

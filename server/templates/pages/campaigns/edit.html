@@ -32,7 +32,7 @@
         <input type="file" name="csv" id="csv" accept=".csv">
 
         <label for="Template">Template</label>
-        <select name="template_id" id="template">
+        <select name="template_id" id="template" onchange="handleTemplate(this)">
             <option value="" style="color:gray; font-style: italic">No Template</option>
         {% for template in templates %}
             {% if campaign.Template.ID == template.ID %}
@@ -46,9 +46,23 @@
         <label for="subject">Subject</label>
         <textarea name="subject" id="subject" cols="50" rows="1">{{campaign.Subject}}</textarea>
 
-        <label for="body">Body</label>
+        <br>
+        <label for="body">Body</label> 
+        <br>
+        <button id="refresh-rendered" type="button">Render</button>
         <div id="editor">{{campaign.Body}}</div>
         <input type="hidden" name="body" id="body" value="{{campaign.Body}}"></input>
+
+        <br>
+
+        <div style="width: 100%; min-width: 500px; height: 100%">
+            <iframe 
+                id="rendered"
+                src="{{ reverse("render-ondemand", campaign.ID) }}?body={{campaign.Body}}" 
+                frameborder="0"
+                style="width: 100%; height: 100%; min-height: 300px;" 
+            ></iframe>
+        </div>
 
         <br>
         <input type="submit" value="Save">
@@ -56,12 +70,25 @@
 </main>
 
 <script>
+    // go template
+    const renderOnDemandEndpoint = '{{ reverse("render-ondemand", campaign.ID) }}'
+    const renderedDOM = document.querySelector("#rendered")
+    const refreshRenderedDOM = document.querySelector("#refresh-rendered")
+    const tplDOM = document.querySelector("#template")
+    function handleTemplate(el) {
+        renderedDOM.src = `${renderOnDemandEndpoint}?body=${htmlBodyEl.value}&templateID=${el.value}`
+    }
+    refreshRenderedDOM.addEventListener("click", function() {
+        renderedDOM.src = `${renderOnDemandEndpoint}?body=${htmlBodyEl.value}&templateID=${tplDOM.value}`
+    })
+
     let editor = ace.edit("editor");
-    let HtmlMode = ace.require("ace/mode/html").Mode;
+    let HtmlMode = ace.require("ace/mode/html").Mode
     editor.session.setMode(new HtmlMode())
     
     let htmlBodyEl = document.querySelector("#body")
     htmlBodyEl.value = editor.getValue()
+
     editor.on("change", function(el) {
         htmlBodyEl.value = editor.getValue()
     })

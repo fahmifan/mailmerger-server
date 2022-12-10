@@ -53,7 +53,6 @@ func (s *Server) routes() {
 	s.echo.POST("/campaigns/:id/update", campaign.Update).Name = "campaigns-update"
 	s.echo.POST("/campaigns/:id/delete", campaign.Delete).Name = "campaigns-delete"
 
-	// s.echo.GET("/campaigns/:campaign_id/rendered-template", renderedTemplate.Show).Name = "rendered-template"
 	s.echo.GET("/campaigns/:campaign_id/render-on-demand", renderOnDemand.Show).Name = "render-ondemand"
 
 	s.echo.POST("/events", event.Create).Name = "events-create"

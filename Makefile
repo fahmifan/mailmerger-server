@@ -10,5 +10,8 @@ run-dev-postgres:
 run-dev-mailhog:
 	docker compose -f docker-compose.dev.yml up -d mailhog
 
-migrate-up:
+migrate-up-postgres:
 	sql-migrate up -env=postgres
+
+migrate-up-sqlite:
+	sql-migrate up -env=sqlite

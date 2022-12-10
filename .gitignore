@@ -2,3 +2,5 @@
 /private
 /docker_volumes
 dbconfig.yml
+/mailmerger.db*
+/.env

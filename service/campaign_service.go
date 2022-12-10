@@ -19,9 +19,9 @@ import (
 var ErrNotFound = errors.New("not found error")
 
 type Audit struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	CreatedAt time.Time      `gorm:"type:datetime"`
+	UpdatedAt time.Time      `gorm:"type:datetime"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:datetime"`
 }
 
 type Campaign struct {

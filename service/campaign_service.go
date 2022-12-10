@@ -68,6 +68,48 @@ func (c Campaign) IsNoEvent() bool {
 	return len(c.Events) == 0
 }
 
+func (c Campaign) RenderTemplateWithBody(body string) (io.Reader, error) {
+	res := bytes.NewBuffer(nil)
+	if c.HasNoTemplate() {
+		return strings.NewReader(body), nil
+	}
+
+	pongoTpl, err := pongo2.FromString(c.Template.HTML)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pongoTpl.ExecuteWriter(pongo2.Context{"body": body}, res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (c Campaign) RenderTemplate() (io.Reader, error) {
+	body := bytes.NewBuffer(nil)
+	if c.HasNoTemplate() {
+		_, err := body.WriteString(c.Body)
+		if err != nil {
+			return nil, fmt.Errorf("write body without template: %w", err)
+		}
+		return body, nil
+	}
+
+	pongoTpl, err := pongo2.FromString(c.Template.HTML)
+	if err != nil {
+		return nil, err
+	}
+
+	err = pongoTpl.ExecuteWriter(pongo2.Context{"body": c.Body}, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return body, nil
+}
+
 type File struct {
 	ID       ulids.ULID `gorm:"primary_key"`
 	Folder   string
@@ -240,23 +282,9 @@ func (c *CampaignService) CreateBlastEmailEvent(ctx context.Context, req CreateB
 		return
 	}
 
-	body := bytes.NewBuffer(nil)
-	if campaign.TemplateID != nil {
-		tpl, err := c.findTemplate(ctx, *campaign.TemplateID)
-		if err != nil {
-			return Event{}, err
-		}
-		pongoTpl, err := pongo2.FromString(tpl.HTML)
-		if err != nil {
-			return Event{}, err
-		}
-
-		err = pongoTpl.ExecuteWriter(pongo2.Context{"body": campaign.Body}, body)
-		if err != nil {
-			return Event{}, err
-		}
-	} else {
-		body.WriteString(campaign.Body)
+	body, err := campaign.RenderTemplate()
+	if err != nil {
+		return Event{}, fmt.Errorf("render: %w", err)
 	}
 
 	csvFile, err := c.cfg.localStorage.Seek(ctx, campaign.File.Folder)
@@ -308,7 +336,65 @@ func (c *CampaignService) Delete(ctx context.Context, id ulids.ULID) (campaign C
 	return campaign, nil
 }
 
-func (c *CampaignService) findTemplate(ctx context.Context, id ulids.ULID) (tpl Template, err error) {
-	err = c.cfg.db.Take(&tpl, "id = ?", id).Error
-	return tpl, unwrapErr(err)
+func (c *CampaignService) RenderBytes(campaign Campaign) ([]byte, error) {
+	buf, err := campaign.RenderTemplate()
+	if err != nil {
+		return nil, fmt.Errorf("render bytes: %w", err)
+	}
+
+	return io.ReadAll(buf)
+}
+
+func (c *CampaignService) RenderByIDAndBody(ctx context.Context, campaignID ulids.ULID, body string) (result []byte, err error) {
+	campaign, err := c.Find(ctx, campaignID)
+	if err != nil {
+		return nil, fmt.Errorf("find campaign: %w", err)
+	}
+
+	rendered, err := campaign.RenderTemplateWithBody(body)
+	if err != nil {
+		return nil, fmt.Errorf("render: %w", err)
+	}
+
+	buf, err := io.ReadAll(rendered)
+	if err != nil {
+		return nil, fmt.Errorf("read rendered")
+	}
+
+	return buf, nil
+}
+
+func (c *CampaignService) RenderByIDAndBodyAndTemplate(ctx context.Context, campaignID ulids.ULID, templateID ulids.ULID, body string) (result []byte, err error) {
+	campaign, err := c.Find(ctx, campaignID)
+	if err != nil {
+		return nil, fmt.Errorf("find campaign: %w", err)
+	}
+
+	template, err := c.findTemplateByID(ctx, templateID)
+	if err != nil {
+		return nil, fmt.Errorf("find template: %w", err)
+	}
+
+	// replace template
+	campaign.Template = &template
+
+	rendered, err := campaign.RenderTemplateWithBody(body)
+	if err != nil {
+		return nil, fmt.Errorf("render: %w", err)
+	}
+
+	buf, err := io.ReadAll(rendered)
+	if err != nil {
+		return nil, fmt.Errorf("read rendered")
+	}
+
+	return buf, nil
+}
+
+func (c *CampaignService) findTemplateByID(ctx context.Context, templateID ulids.ULID) (tpl Template, err error) {
+	err = c.cfg.db.WithContext(ctx).Take(&tpl, "id = ?", templateID).Error
+	if err != nil {
+		return Template{}, unwrapErr(err)
+	}
+	return tpl, nil
 }

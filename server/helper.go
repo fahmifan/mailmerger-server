@@ -16,6 +16,8 @@ func notFound(ec echo.Context) error {
 	return ec.Render(http.StatusNotFound, "pages/not_found_error.html", echo.Map{})
 }
 
-func badRequest(ec echo.Context) error {
-	return ec.Render(http.StatusBadRequest, "pages/not_found_error.html", echo.Map{})
+func badRequest(ec echo.Context, msgs ...string) error {
+	return ec.Render(http.StatusBadRequest, "pages/not_found_error.html", echo.Map{
+		"message": msgs,
+	})
 }

@@ -39,7 +39,6 @@ func (s *Server) routes() {
 	event := EventHandler{s}
 	files := FileHandler{s}
 	template := TemplateHandler{s}
-	// renderedTemplate := RenderedTemplateHandler{s}
 	renderOnDemand := RenderOnDemandHandler{s}
 
 	s.echo.Use(echo.WrapMiddleware(csrfMiddleware))

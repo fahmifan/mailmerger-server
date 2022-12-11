@@ -4,6 +4,7 @@ import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import Home from './Home';
 import ListCampaign, { Campaign, campaignLoader } from './Campaign';
+import ListTemplate, {   Template, templateLoader } from './Template'
 import Navigation from "./components/Navigation";
 
 import './style.css'
@@ -40,8 +41,16 @@ const router = createHashRouter([
         path: "/templates",
         element: <>
             <Nav />
-            <h1>Templates</h1>
+            <ListTemplate />
         </>
+    },
+    {
+        path: "/templates/:templateID",
+        element: <>
+            <Nav />
+            <Template />
+        </>,
+        loader: templateLoader,
     }
 ])
 

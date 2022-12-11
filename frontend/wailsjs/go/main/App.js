@@ -10,6 +10,14 @@ export function ListCampaigns() {
   return window['go']['main']['App']['ListCampaigns']();
 }
 
+export function ListTemplates() {
+  return window['go']['main']['App']['ListTemplates']();
+}
+
 export function ShowCampaign(arg1) {
   return window['go']['main']['App']['ShowCampaign'](arg1);
+}
+
+export function ShowTemplate(arg1) {
+  return window['go']['main']['App']['ShowTemplate'](arg1);
 }

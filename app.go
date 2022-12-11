@@ -55,3 +55,15 @@ func (app *App) CreateRenderedTemplate(templateIdStr, body string) (string, erro
 
 	return string(result), nil
 }
+
+func (app *App) ListTemplates() ([]service.Template, error) {
+	return app.TemplateService.FindAll(app.ctx)
+}
+
+func (app *App) ShowTemplate(idStr string) (service.Template, error) {
+	id, err := ulids.Parse(idStr)
+	if err != nil {
+		return service.Template{}, err
+	}
+	return app.TemplateService.FindByID(app.ctx, id)
+}

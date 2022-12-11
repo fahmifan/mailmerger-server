@@ -5,15 +5,9 @@ import "ace-builds/src-noconflict/mode-plain_text";
 import "ace-builds/src-noconflict/theme-solarized_light";
 import "ace-builds/src-noconflict/ext-language_tools";
 
-
 import * as gotype from '../wailsjs/go/models';
 import * as goApp from '../wailsjs/go/main/App';
 import * as runtime from '../wailsjs/runtime/runtime';
-
-type Prop = {
-    campaign: gotype.service.Campaign,
-}
-
 
 function ListCampaign(): ReactElement {
     let [campaigns, setCampaigns] = useState<gotype.service.Campaign[]>([])

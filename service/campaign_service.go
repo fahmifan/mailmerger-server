@@ -67,10 +67,6 @@ func (c Campaign) IsNoEvent() bool {
 }
 
 func (c Campaign) RenderTemplate() (io.Reader, error) {
-	if c.HasNoTemplate() {
-		return strings.NewReader(c.Body), nil
-	}
-
 	return NewCampaignRenderer(c.Body, c.Template).Render()
 }
 

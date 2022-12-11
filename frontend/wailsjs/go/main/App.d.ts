@@ -6,4 +6,8 @@ export function CreateRenderedTemplate(arg1:string,arg2:string):Promise<string>;
 
 export function ListCampaigns():Promise<Array<service.Campaign>>;
 
+export function ListTemplates():Promise<Array<service.Template>>;
+
 export function ShowCampaign(arg1:string):Promise<service.Campaign>;
+
+export function ShowTemplate(arg1:string):Promise<service.Template>;

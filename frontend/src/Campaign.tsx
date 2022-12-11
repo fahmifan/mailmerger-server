@@ -100,7 +100,6 @@ export function Campaign(): ReactElement {
         <p>File: {campaign.file.fileName}</p>
         <p>Template: {campaign.template ? campaign.template.name : <i>No Template</i>}</p>
 
-        <button onClick={renderContent}>Render</button>
         <AceEditor
             onChange={onChange}
             placeholder="Write your content"
@@ -111,8 +110,10 @@ export function Campaign(): ReactElement {
             showPrintMargin={true}
             showGutter={true}
             width="100%"
+            height='300px'
             highlightActiveLine={true}
             value={content}
+            readOnly={true}
             setOptions={{
                 enableBasicAutocompletion: true,
                 enableLiveAutocompletion: true,
@@ -125,7 +126,6 @@ export function Campaign(): ReactElement {
         <br />
         <iframe 
                 id="rendered"
-                // src="{{ reverse("render-ondemand", campaign.ID) }}?body={{campaign.Body}}&templateID={{campaign.Template.ID}}" 
                 srcDoc={renderedContent}
                 style={{width: "100%", height: "100%", minHeight: "300px"}} 
         />

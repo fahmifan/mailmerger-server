@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client'
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import Home from './Home';
+import ListCampaign, { Campaign, campaignLoader } from './Campaign';
 import Navigation from "./components/Navigation";
 
 import './style.css'
@@ -24,8 +25,16 @@ const router = createHashRouter([
         path: "/campaigns",
         element: <>
             <Nav />
-            <h1>Campaigns</h1>
+            <ListCampaign />
         </>
+    },
+    {
+        path: "/campaigns/:campaignID",
+        element: <>
+            <Nav />
+            <Campaign />
+        </>,
+        loader: campaignLoader,
     },
     {
         path: "/templates",
@@ -36,8 +45,14 @@ const router = createHashRouter([
     }
 ])
 
+const App = (props: any) => <>
+    {props.children}
+</>
+
 root.render(
     <React.StrictMode>
-        <RouterProvider router={router} />
+        <App root={root}>
+            <RouterProvider router={router} />
+        </App>
     </React.StrictMode>
 )

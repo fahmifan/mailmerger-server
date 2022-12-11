@@ -25,7 +25,6 @@
                             {{ csrfField | safe }}
                             <input type="submit" value="Edit">
                         </form>
-                    </a>
                     <form action="{{ reverse("campaigns-delete", campaign.ID) }}" method="post">
                         {{ csrfField | safe }}
                         <input type="submit" value="Delete">

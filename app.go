@@ -2,17 +2,20 @@ package main
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/fahmifan/mailmerger-server/service"
+	"github.com/fahmifan/ulids"
 )
 
 // App struct
 type App struct {
 	ctx context.Context
+	*service.Service
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(svc *service.Service) *App {
+	return &App{Service: svc}
 }
 
 // startup is called when the app starts. The context is saved
@@ -21,17 +24,34 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+func (a *App) ShowCampaign(idStr string) (service.Campaign, error) {
+	id, err := ulids.Parse(idStr)
+	if err != nil {
+		return service.Campaign{}, err
+	}
+
+	campaign, err := a.CampaignService.Find(a.ctx, id)
+	if err != nil {
+		return service.Campaign{}, err
+	}
+
+	return campaign, nil
 }
 
-func (a *App) Echo(in string) (out string) {
-	return "Echoed: " + in
+func (app *App) ListCampaigns() ([]service.Campaign, error) {
+	return app.CampaignService.List(app.ctx)
 }
 
-type Echo struct{}
+func (app *App) CreateRenderedTemplate(templateIdStr, body string) (string, error) {
+	templateID, err := ulids.Parse(templateIdStr)
+	if err != nil {
+		return "", err
+	}
 
-func (Echo) Send(in string) string {
-	return "Echoed: " + in
+	result, err := app.CampaignService.RenderByBodyAndTemplate(app.ctx, templateID, body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(result), nil
 }

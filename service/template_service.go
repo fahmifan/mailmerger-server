@@ -9,9 +9,9 @@ import (
 )
 
 type Template struct {
-	ID   ulids.ULID `gorm:"primary_key"`
-	Name string
-	HTML string
+	ID   ulids.ULID `json:"id" gorm:"primary_key"`
+	Name string     `json:"name"`
+	HTML string     `json:"html"`
 	Audit
 }
 

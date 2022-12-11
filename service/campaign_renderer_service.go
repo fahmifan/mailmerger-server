@@ -2,7 +2,9 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/flosch/pongo2"
 )
@@ -17,6 +19,11 @@ func NewCampaignRenderer(body string, template *Template) CampaignRenderer {
 }
 
 func (c CampaignRenderer) Render() (io.Reader, error) {
+	fmt.Println("DEBUG >>> c.body >>> ", c.body)
+	if c.body == "" {
+		return strings.NewReader(c.body), nil
+	}
+
 	res := bytes.NewBuffer(nil)
 
 	pongoTpl, err := pongo2.FromString(c.template.HTML)

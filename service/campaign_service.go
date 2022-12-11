@@ -19,23 +19,23 @@ import (
 var ErrNotFound = errors.New("not found error")
 
 type Audit struct {
-	CreatedAt time.Time      `gorm:"type:datetime"`
-	UpdatedAt time.Time      `gorm:"type:datetime"`
-	DeletedAt gorm.DeletedAt `gorm:"index;type:datetime"`
+	CreatedAt time.Time      `gorm:"type:datetime" json:"createdAt"`
+	UpdatedAt time.Time      `gorm:"type:datetime" json:"updatedAt"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:datetime" json:"deletedAt"`
 }
 
 type Campaign struct {
-	ID         ulids.ULID `gorm:"primary_key"`
-	FileID     *ulids.ULID
-	Name       string
-	Body       string
-	Subject    string
-	TemplateID *ulids.ULID
+	ID         ulids.ULID  `gorm:"primary_key" json:"id"`
+	FileID     *ulids.ULID `json:"fileID"`
+	Name       string      `json:"name"`
+	Body       string      `json:"body"`
+	Subject    string      `json:"subject"`
+	TemplateID *ulids.ULID `json:"templateID"`
 	Audit
 
-	File     File
-	Events   []Event
-	Template *Template `gorm:"->;foreignKey:TemplateID"`
+	File     File      `json:"file"`
+	Events   []Event   `json:"events"`
+	Template *Template `gorm:"->;foreignKey:TemplateID" json:"template"`
 }
 
 func (c Campaign) HasNoTemplate() bool {
@@ -75,9 +75,9 @@ func (c Campaign) RenderTemplate() (io.Reader, error) {
 }
 
 type File struct {
-	ID       ulids.ULID `gorm:"primary_key"`
-	Folder   string
-	FileName string
+	ID       ulids.ULID `json:"id" gorm:"primary_key"`
+	Folder   string     `json:"folder"`
+	FileName string     `json:"fileName"`
 	Audit
 }
 
@@ -89,11 +89,11 @@ const (
 )
 
 type Event struct {
-	ID         ulids.ULID
-	CampaignID ulids.ULID `gorm:"references:CampaignID"`
-	Detail     string
-	CreatedAt  time.Time
-	Status     EventStatus
+	ID         ulids.ULID  `json:"id"`
+	CampaignID ulids.ULID  `json:"campaignID" gorm:"references:CampaignID"`
+	Detail     string      `json:"detail"`
+	CreatedAt  time.Time   `json:"createdAt"`
+	Status     EventStatus `json:"status"`
 }
 
 type BlastEmailConfig struct {

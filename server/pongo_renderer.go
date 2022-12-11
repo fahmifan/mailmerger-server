@@ -1,12 +1,13 @@
 package server
 
 import (
+	"embed"
+	_ "embed"
 	"encoding/json"
 	"io"
 	"os"
 	"path"
 
-	"github.com/fahmifan/mailmerger-server/server/templates"
 	"github.com/flosch/pongo2/v6"
 	"github.com/gorilla/csrf"
 	"github.com/labstack/echo/v4"
@@ -28,11 +29,14 @@ type PongoRendererConfig struct {
 	DebugEnabled bool
 }
 
+//go:embed all:templates
+var templateFS embed.FS
+
 // NewPongoRenderer ..
 func NewPongoRenderer(cfg *PongoRendererConfig) *PongoRenderer {
 	pr := &PongoRenderer{PongoRendererConfig: cfg}
 	pr.loadGlobalData()
-	pr.tplSet = pongo2.NewSet("embedFs", pongo2.NewFSLoader(templates.FS()))
+	pr.tplSet = pongo2.NewSet("embedFs", pongo2.NewFSLoader(templateFS))
 	return pr
 }
 

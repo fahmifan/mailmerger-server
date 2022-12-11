@@ -1,10 +1,10 @@
 package templates
 
-import "embed"
+// import "embed"
 
-//go:embed * */*
-var files embed.FS
+// //go:embed base.html all:
+// var files embed.FS
 
-func FS() embed.FS {
-	return files
-}
+// func FS() embed.FS {
+// 	return files
+// }

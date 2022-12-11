@@ -14,7 +14,7 @@ function ListCampaign(): ReactElement {
 
     useEffect(() => {
         findCampaigns()
-    }, [campaigns])
+    })
 
 
     const findCampaigns = async () => {
@@ -23,7 +23,6 @@ function ListCampaign(): ReactElement {
     }
 
     const handleEdit = (campaignID: string) => {
-        runtime.LogDebug("edit >>> "+campaignID)
     }
 
     return <main>

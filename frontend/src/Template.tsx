@@ -28,7 +28,7 @@ export default function ListTemplate(): ReactElement {
 
     useEffect(() => {
         findTemplates()
-    }, [templates])
+    })
 
     return <main>
         <h1>Templates</h1>

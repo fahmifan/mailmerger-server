@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fahmifan/mailmerger-server/config"
+	"github.com/fahmifan/mailmerger-server/db/gorms"
 	"github.com/fahmifan/mailmerger-server/pkg/localfs"
 	"github.com/fahmifan/mailmerger-server/pkg/smtp"
 	"github.com/fahmifan/mailmerger-server/server"
 	"github.com/fahmifan/mailmerger-server/service"
 	"github.com/spf13/cobra"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -30,12 +31,21 @@ func runServer() *cobra.Command {
 	cmd := cobra.Command{
 		Use: "server",
 	}
-
 	cmd.RunE = func(cmd *cobra.Command, args []string) (err error) {
-		dsn := "host=localhost user=root password=root dbname=mailmerger port=5432 sslmode=disable"
-		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-		if err != nil {
-			panic("failed to connect database")
+		cfg := config.GetConfig()
+		sqlite := gorms.SQLite{
+			DSN:              cfg.SQLite.GetDBName(),
+			EnableWAL:        cfg.SQLite.EnableWAL,
+			EnableForeignKey: cfg.SQLite.EnableForeignKey,
+		}
+		postgres := gorms.Postgres{DSN: cfg.Postgres.DSN()}
+
+		var db *gorm.DB
+		switch cfg.DbDriver {
+		case config.DbDriverPostgres:
+			db = postgres.MustOpen()
+		case config.DbDriverSQLite:
+			db = sqlite.MustOpen()
 		}
 
 		localFS := localfs.Storage{
@@ -48,9 +58,10 @@ func runServer() *cobra.Command {
 		if err != nil {
 			return
 		}
+
 		blastEmailCfg := service.BlastEmailConfig{
-			Sender:      "admin@mailmerger.com",
-			Concurrency: 4,
+			Sender:      cfg.Mailer.SenderAddress,
+			Concurrency: cfg.Mailer.Concurrency,
 			Transporter: smptTransporter,
 		}
 		svc := service.NewService(db, &localFS, &blastEmailCfg)
@@ -59,5 +70,6 @@ func runServer() *cobra.Command {
 		srv.Run()
 		return
 	}
+
 	return &cmd
 }

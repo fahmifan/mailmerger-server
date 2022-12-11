@@ -1,0 +1,17 @@
+[
+    {
+        "text": "Home",
+        "url": "/",
+        "external": false
+    },
+    {
+        "text": "Campaign",
+        "url": "/campaigns",
+        "external": false
+    },
+    {
+        "text": "Template",
+        "url": "/templates",
+        "external": false
+    }
+]

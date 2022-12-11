@@ -4,3 +4,6 @@
 dbconfig.yml
 /mailmerger.db*
 /.env
+build/bin
+node_modules
+frontend/dist
